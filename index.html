@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Writer's Room</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">WR</span>
+          <div>
+            <strong>Writer's Room</strong>
+            <span>штаб истории</span>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Разделы проекта">
+          <button class="nav-item active" data-view="board">Доска</button>
+          <button class="nav-item" data-view="characters">Досье</button>
+          <button class="nav-item" data-view="timeline">Таймлайн</button>
+          <button class="nav-item" data-view="family">Родословная</button>
+          <button class="nav-item" data-view="mindmap">Майнд-карта</button>
+          <button class="nav-item" data-view="archive">Архив</button>
+        </nav>
+        <div class="sidebar-actions">
+          <button id="exportBtn" class="ghost">Экспорт</button>
+          <label class="ghost file-label">
+            Импорт
+            <input id="importInput" type="file" accept="application/json" />
+          </label>
+        </div>
+      </aside>
+
+      <main>
+        <section class="hero">
+          <img src="assets/writer-caseboard-hero.png" alt="Писательская доска с досье, картами и нитями" />
+          <div class="hero-copy">
+            <p>Локальная мастерская сюжета</p>
+            <h1>Разложи историю так, чтобы она начала отвечать.</h1>
+            <button id="newProjectBtn">Новый проект</button>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Текущий проект</p>
+              <h2 id="projectTitle" contenteditable="true" spellcheck="false">Дом на черной воде</h2>
+            </div>
+            <div class="status-bar">
+              <span id="saveState">сохранено</span>
+              <span id="itemCount">0 объектов</span>
+            </div>
+          </header>
+
+          <section id="board" class="view active">
+            <div class="caseboard" id="caseboard"></div>
+          </section>
+
+          <section id="characters" class="view">
+            <div class="split">
+              <form id="characterForm" class="panel">
+                <h3>Досье персонажа</h3>
+                <input name="name" placeholder="Имя" required />
+                <input name="role" placeholder="Роль в истории" />
+                <textarea name="motive" placeholder="Чего хочет"></textarea>
+                <textarea name="secret" placeholder="Что скрывает"></textarea>
+                <button type="submit">Добавить</button>
+              </form>
+              <div id="characterList" class="cards"></div>
+            </div>
+          </section>
+
+          <section id="timeline" class="view">
+            <div class="split">
+              <form id="eventForm" class="panel">
+                <h3>Событие</h3>
+                <input name="date" placeholder="Дата или порядок" required />
+                <input name="title" placeholder="Название события" required />
+                <textarea name="notes" placeholder="Что меняет в сюжете"></textarea>
+                <button type="submit">Добавить</button>
+              </form>
+              <div id="timelineList" class="timeline-list"></div>
+            </div>
+          </section>
+
+          <section id="family" class="view">
+            <div class="family-tree" id="familyTree"></div>
+          </section>
+
+          <section id="mindmap" class="view">
+            <div class="mindmap" id="mindmapCanvas"></div>
+          </section>
+
+          <section id="archive" class="view">
+            <div class="archive">
+              <img src="assets/writer-planning-kit.png" alt="Материалы для планирования истории" />
+              <div>
+                <h3>Архив проекта</h3>
+                <p>Здесь будут жить референсы, заметки, чеховские ружья, список тайн и версии канона. В первой версии экспорт уже сохраняет персонажей, события, связи и название проекта.</p>
+                <button id="seedBtn">Заполнить примером</button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
