@@ -75,7 +75,12 @@ function loadLegacyProject() {
 
 function loadAppState() {
   const raw = localStorage.getItem(multiStoreKey);
-  if (raw) return JSON.parse(raw);
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    const projects = (parsed.projects || []).map(normalize);
+    const activeProjectId = projects.some((project) => project.id === parsed.activeProjectId) ? parsed.activeProjectId : projects[0]?.id;
+    return { activeProjectId, projects: projects.length ? projects : [normalize(clone(seed))] };
+  }
   const first = normalize(loadLegacyProject());
   first.id = first.id || createId();
   return { activeProjectId: first.id, projects: [first] };
@@ -128,12 +133,34 @@ function renderLinkStatus() {
 
 function renderProjectList() {
   $("#projectList").innerHTML = appState.projects.map((project) => `
-    <button class="project-pill ${project.id === state.id ? "active" : ""}" data-project="${project.id}">
+    <button type="button" class="project-pill ${project.id === state.id ? "active" : ""}" data-project="${project.id}">
       <strong>${escapeHtml(project.title || "Без названия")}</strong>
       <span>${escapeHtml(project.currentAt || "проект")}</span>
       ${appState.projects.length > 1 ? `<span class="project-delete" data-delete-project="${project.id}">${icons.delete}</span>` : ""}
     </button>
   `).join("");
+}
+
+function selectProject(id) {
+  const project = appState.projects.find((entry) => entry.id === id);
+  if (!project) return;
+  appState.activeProjectId = id;
+  state = project;
+  pendingLink = null;
+  linkMode = false;
+  save();
+  render();
+}
+
+function deleteProject(id) {
+  if (appState.projects.length <= 1) return;
+  appState.projects = appState.projects.filter((project) => project.id !== id);
+  appState.activeProjectId = appState.projects[0].id;
+  state = currentProject();
+  pendingLink = null;
+  linkMode = false;
+  save();
+  render();
 }
 
 function boardItems() {
@@ -397,22 +424,6 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 });
 
 document.body.addEventListener("click", (event) => {
-  const projectButton = event.target.closest("[data-project]");
-  const deleteProject = event.target.closest("[data-delete-project]");
-  if (deleteProject) {
-    event.stopPropagation();
-    appState.projects = appState.projects.filter((project) => project.id !== deleteProject.dataset.deleteProject);
-    appState.activeProjectId = appState.projects[0].id;
-    state = currentProject();
-    save();
-    return render();
-  }
-  if (projectButton) {
-    appState.activeProjectId = projectButton.dataset.project;
-    state = currentProject();
-    save();
-    return render();
-  }
   const link = event.target.closest("[data-link]");
   if (link) return handleLink(link.dataset.id);
   const boardCard = event.target.closest("#caseboard .pin-card[data-id]");
@@ -440,6 +451,19 @@ document.body.addEventListener("click", (event) => {
 });
 
 $("#projectTitle").addEventListener("input", (event) => { state.title = event.target.textContent.trim() || "Без названия"; save(); });
+$("#projectList").addEventListener("click", (event) => {
+  const remove = event.target.closest("[data-delete-project]");
+  if (remove) {
+    event.preventDefault();
+    event.stopPropagation();
+    return deleteProject(remove.dataset.deleteProject);
+  }
+  const project = event.target.closest("[data-project]");
+  if (project) {
+    event.preventDefault();
+    return selectProject(project.dataset.project);
+  }
+});
 $("#linkModeBtn").addEventListener("click", toggleLinkMode);
 $("#editorForm").addEventListener("submit", saveEditor);
 $("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
