@@ -374,25 +374,29 @@ function enableDrag(el) {
     const parent = (isMind ? $("#mindmapCanvas") : el.parentElement).getBoundingClientRect();
     let moved = false;
     const startX = event.clientX, startY = event.clientY;
-    el.setPointerCapture(event.pointerId);
+    el.setPointerCapture?.(event.pointerId);
     const move = (moveEvent) => {
       moved = moved || Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4;
       const entry = findEntry(el.dataset.type, el.dataset.id);
       const localX = isMind ? (moveEvent.clientX - parent.left - mindView.x) / mindView.scale : moveEvent.clientX - parent.left;
       const localY = isMind ? (moveEvent.clientY - parent.top - mindView.y) / mindView.scale : moveEvent.clientY - parent.top;
-      entry.x = clamp((localX / parent.width) * 100, 1, 92);
-      entry.y = clamp((localY / parent.height) * 100, 1, 90);
+      entry.x = clamp((localX / parent.width) * 100, 1, 96);
+      entry.y = clamp((localY / parent.height) * 100, 1, 96);
       el.style.left = `${entry.x}%`;
       el.style.top = `${entry.y}%`;
       updateSurfaceLinks(el);
     };
     const up = () => {
-      el.removeEventListener("pointermove", move);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      if (el.hasPointerCapture?.(event.pointerId)) el.releasePointerCapture(event.pointerId);
       save();
       moved ? render() : openEditor(el.dataset.type, el.dataset.id);
     };
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up, { once: true });
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
   });
 }
 

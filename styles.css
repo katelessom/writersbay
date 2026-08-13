@@ -342,9 +342,9 @@ h2 {
 
 .caseboard {
   position: relative;
-  width: 100%;
-  height: clamp(520px, calc(100vh - 230px), 900px);
-  min-height: 520px;
+  width: max(100%, 2600px);
+  height: max(1400px, calc(100vh - 230px));
+  min-height: 900px;
   border: 1px solid var(--line);
   border-radius: 0 0 8px 8px;
   overflow: hidden;
@@ -353,6 +353,10 @@ h2 {
     #2f4637;
   background-size: 18px 18px;
   touch-action: none;
+}
+
+#board {
+  overflow: auto;
 }
 
 #board,
@@ -758,15 +762,19 @@ dd {
 }
 
 .family-tree, .mindmap, .freeboard {
-  width: 100%;
-  height: clamp(500px, calc(100vh - 190px), 860px);
-  min-height: 500px;
+  width: max(100%, 2200px);
+  height: max(1200px, calc(100vh - 190px));
+  min-height: 900px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   position: relative;
   overflow: hidden;
   touch-action: none;
+}
+
+#family {
+  overflow: auto;
 }
 
 .family-tree {
@@ -820,6 +828,10 @@ dd {
     radial-gradient(circle at 1px 1px, rgba(36, 52, 57, .18) 1px, transparent 0),
     #fffaf0;
   background-size: 24px 24px;
+}
+
+.mind-shell {
+  overflow: auto;
 }
 
 .mindmap:active {
