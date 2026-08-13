@@ -212,9 +212,16 @@ function renderArchive() {
 function enableDrag(el) {
   el.addEventListener("pointerdown", (event) => {
     if (event.target.closest("button")) return;
+    event.preventDefault();
     const parent = el.parentElement.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let moved = false;
     el.setPointerCapture(event.pointerId);
     const move = (moveEvent) => {
+      if (Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4) {
+        moved = true;
+      }
       const x = ((moveEvent.clientX - parent.left) / parent.width) * 100;
       const y = ((moveEvent.clientY - parent.top) / parent.height) * 100;
       const entry = findEntry(el.dataset.type, el.dataset.id);
@@ -226,7 +233,11 @@ function enableDrag(el) {
     const up = () => {
       el.removeEventListener("pointermove", move);
       save();
-      render();
+      if (moved) {
+        render();
+      } else {
+        openEditor(el.dataset.type, el.dataset.id);
+      }
     };
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up, { once: true });
@@ -317,7 +328,7 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 
 document.body.addEventListener("click", (event) => {
   const editableCard = event.target.closest(".card[data-type], .pin-card[data-type], .timeline-item[data-type]");
-  if (editableCard && !event.target.closest("button, input, textarea, select")) {
+  if (editableCard && !editableCard.classList.contains("pin-card") && !event.target.closest("button, input, textarea, select")) {
     openEditor(editableCard.dataset.type, editableCard.dataset.id);
     return;
   }

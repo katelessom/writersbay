@@ -18,6 +18,8 @@ body {
   font-family: Inter, Segoe UI, Arial, sans-serif;
   color: var(--ink);
   background: #efe8dc;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button, input, textarea, select {
@@ -238,9 +240,15 @@ h2 {
   border: 1px solid #e4d4bc;
   box-shadow: 0 12px 24px rgba(22, 12, 6, .22);
   cursor: grab;
+  -webkit-user-select: none;
   user-select: none;
+  touch-action: none;
   display: flex;
   flex-direction: column;
+}
+
+.pin-card:active {
+  cursor: grabbing;
 }
 
 .pin-card::before {
@@ -319,6 +327,8 @@ input, textarea, select {
   background: white;
   color: var(--ink);
   padding: 10px 12px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 textarea {
