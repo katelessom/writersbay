@@ -118,6 +118,9 @@ function makePin(entry) {
   card.style.setProperty("--pin", entry.color || "#a6782c");
   const image = entry.image ? `<img class="avatar" src="${entry.image}" alt="">` : "";
   card.innerHTML = `${image}<strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.role || entry.date || entry.relation || entry.kind || entry.type)}</span><span>${escapeHtml(entry.secret || entry.notes || "")}</span><div class="card-controls"><button class="edit-chip" data-edit="${entry.type}" data-id="${entry.id}">Редактировать</button><button class="delete-chip" data-delete="${entry.type}" data-id="${entry.id}">Удалить</button></div>`;
+  card.addEventListener("dblclick", (event) => {
+    if (!event.target.closest("button")) openEditor(entry.type, entry.id);
+  });
   enableDrag(card);
   return card;
 }
