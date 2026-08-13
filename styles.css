@@ -536,13 +536,13 @@ textarea {
 .dossier-card {
   position: relative;
   display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 14px;
-  min-height: 210px;
-  padding: 14px;
+  grid-template-columns: 82px 1fr;
+  gap: 10px;
+  min-height: 142px;
+  padding: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 8px solid var(--pin, var(--forest));
+  border-left: 6px solid var(--pin, var(--forest));
   border-radius: 4px;
 }
 
@@ -555,14 +555,14 @@ textarea {
 .dossier-strip {
   grid-column: 1 / -1;
   color: var(--forest);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .mugshot {
-  width: 120px;
-  height: 140px;
+  width: 82px;
+  height: 96px;
   object-fit: cover;
   border: 1px solid var(--line);
   background: linear-gradient(135deg, #d8d7cb, #b7c1b9);
@@ -571,34 +571,45 @@ textarea {
 .mugshot.empty::after {
   content: "";
   display: block;
-  width: 42px;
-  height: 42px;
-  margin: 34px auto 0;
+  width: 30px;
+  height: 30px;
+  margin: 22px auto 0;
   border-radius: 50%;
   background: #728071;
-  box-shadow: 0 50px 0 18px #728071;
+  box-shadow: 0 36px 0 13px #728071;
 }
 
 .dossier-body {
   min-width: 0;
-  padding-right: 58px;
+  padding-right: 48px;
+}
+
+.dossier-body h3 {
+  margin-bottom: 6px;
+  font-size: 17px;
+}
+
+.dossier-body p {
+  margin-bottom: 5px;
+  font-size: 13px;
 }
 
 dl {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin: 8px 0 14px;
+  gap: 4px;
+  margin: 6px 0 8px;
 }
 
 dt {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 10px;
 }
 
 dd {
   margin: 0;
   font-weight: 700;
+  font-size: 12px;
 }
 
 .card-action, .mini-delete {
