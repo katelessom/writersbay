@@ -27,7 +27,6 @@ const schemas = {
 
 const selectValues = ["Тайна", "Чеховское ружье", "Дыра в сюжете", "Версия канона", "Факт", "Подозрение", "Ложь"];
 const boardTypes = ["characters", "events", "clues", "notesBoard", "tracker"];
-let boardFilters = new Set(boardTypes);
 let editing = null;
 let pendingLink = null;
 let linkMode = false;
@@ -109,7 +108,6 @@ function render() {
   $("#projectMeta").textContent = [state.startedAt && `Дата начала: ${state.startedAt}`, state.currentAt && `Сейчас: ${state.currentAt}`].filter(Boolean).join(" | ") || "Настрой проект: обложка, даты, этап и заметки.";
   $("#projectNotes").textContent = state.notes || "";
   $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive", "notebook"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
-  renderFilters();
   renderLinkStatus();
   renderProjectList();
   renderBoard();
@@ -138,12 +136,8 @@ function renderProjectList() {
   `).join("");
 }
 
-function renderFilters() {
-  document.querySelectorAll(".filter-chip").forEach((button) => button.classList.toggle("active", boardFilters.has(button.dataset.filter)));
-}
-
 function boardItems() {
-  return [...state.characters, ...state.events, ...state.clues, ...state.notesBoard, ...state.tracker].filter((entry) => boardFilters.has(entry.type));
+  return [...state.characters, ...state.events, ...state.clues, ...state.notesBoard, ...state.tracker];
 }
 
 function renderBoard() {
@@ -172,7 +166,7 @@ function makePin(entry) {
   if (pendingLink === entry.id) card.classList.add("link-selected");
   card.style.left = `${entry.x}%`;
   card.style.top = `${entry.y}%`;
-  card.style.setProperty("--pin", entry.color || "#8b6a18");
+  card.style.setProperty("--pin", entry.color || typeColor(entry.type, entry.kind));
   const image = entry.image ? `<figure class="pinned-photo"><img src="${entry.image}" alt=""><figcaption>${escapeHtml(entry.caption || "")}</figcaption></figure>` : "";
   card.innerHTML = `<div class="icon-row">${iconButton("link", entry.type, entry.id)}${iconButton("edit", entry.type, entry.id)}${iconButton("delete", entry.type, entry.id)}</div>${image}<small>${escapeHtml(entry.kind || entry.role || entry.chapter || entry.date || entry.relation || labelFor(entry.type))}</small><strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.secret || entry.notes || "")}</span>`;
   enableDrag(card);
@@ -419,12 +413,6 @@ document.body.addEventListener("click", (event) => {
     save();
     return render();
   }
-  const filter = event.target.closest("[data-filter]");
-  if (filter) {
-    boardFilters.has(filter.dataset.filter) ? boardFilters.delete(filter.dataset.filter) : boardFilters.add(filter.dataset.filter);
-    render();
-    return;
-  }
   const link = event.target.closest("[data-link]");
   if (link) return handleLink(link.dataset.id);
   const boardCard = event.target.closest("#caseboard .pin-card[data-id]");
@@ -538,6 +526,16 @@ function chooseLinkTarget(id) {
 
 function labelFor(type) {
   return ({ characters: "персонаж", events: "событие", clues: "улика", notesBoard: "заметка", tracker: "тайна", family: "родословная", mind: "узел", archive: "архив" })[type] || type;
+}
+
+function typeColor(type, kind = "") {
+  if (type === "characters") return "#173a24";
+  if (type === "events") return "#243439";
+  if (type === "clues") return "#8b4326";
+  if (type === "notesBoard") return "#7c8561";
+  if (type === "tracker" && kind === "Дыра в сюжете") return "#3c1d28";
+  if (type === "tracker") return "#9b7014";
+  return "#82745f";
 }
 
 function findEntry(type, id) {

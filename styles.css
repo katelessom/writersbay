@@ -281,24 +281,11 @@ h2 {
   font-size: 13px;
 }
 
-.filterbar {
+.board-status {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
-}
-
-.filter-chip {
-  padding: 8px 11px;
-  background: transparent;
-  color: var(--forest);
-  border: 1px solid var(--line);
-}
-
-.filter-chip.active {
-  color: white;
-  background: var(--forest);
-  border-color: var(--forest);
 }
 
 .toolbar {
@@ -355,7 +342,7 @@ h2 {
 }
 
 #board .toolbar,
-#board .filterbar,
+#board .board-status,
 #family .toolbar {
   padding: 10px;
   background: var(--cream);
