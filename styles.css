@@ -461,7 +461,7 @@ dd {
   background: var(--pin, var(--green));
 }
 
-.family-tree, .mindmap {
+.family-tree, .mindmap, .freeboard {
   min-height: 520px;
   background: var(--surface);
   border: 1px solid var(--line);

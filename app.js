@@ -184,17 +184,12 @@ function renderFreeCanvas(selector, type) {
 }
 
 function renderTracker() {
-  $("#trackerList").innerHTML = state.tracker.map((entry) => `
-    <article class="card tracker-card" data-type="tracker" data-id="${entry.id}">
-      <small>${escapeHtml(entry.kind)}</small>
-      <h3>${escapeHtml(entry.title)}</h3>
-      <p>${escapeHtml(entry.notes || "пока без заметок")}</p>
-      <div class="card-controls">
-        <button data-edit="tracker" data-id="${entry.id}">Редактировать</button>
-        <button class="danger soft" data-delete="tracker" data-id="${entry.id}">Удалить</button>
-      </div>
-    </article>
-  `).join("");
+  const root = $("#trackerList");
+  root.innerHTML = "";
+  state.tracker.forEach((entry, index, list) => {
+    if (index > 0) addThread(root, list[index - 1], entry);
+  });
+  state.tracker.forEach((entry) => root.appendChild(makePin(entry)));
 }
 
 function renderArchive() {
