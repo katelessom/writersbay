@@ -20,15 +20,17 @@
 
 body {
   margin: 0;
-  font-family: Inter, Segoe UI, Arial, sans-serif;
+  font-family: "Courier New", "Lucida Console", Monaco, Consolas, monospace;
   color: var(--ink);
   background: var(--cream);
   -webkit-user-select: none;
   user-select: none;
+  line-height: 1.5;
 }
 
 button, input, textarea, select {
-  font: inherit;
+  font-family: inherit;
+  font-size: 15px;
 }
 
 button {
@@ -168,6 +170,7 @@ main {
   font-size: clamp(38px, 6vw, 76px);
   line-height: .98;
   letter-spacing: 0;
+  font-family: inherit;
 }
 
 .workspace {
@@ -186,9 +189,14 @@ h2, h3, p {
   margin-top: 0;
 }
 
+h1, h2, h3, strong, button {
+  font-weight: 700;
+}
+
 h2 {
   margin-bottom: 0;
   font-size: 30px;
+  line-height: 1.18;
 }
 
 .status-bar {
