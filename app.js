@@ -117,7 +117,7 @@ function makePin(entry) {
   card.style.top = `${entry.y}%`;
   card.style.setProperty("--pin", entry.color || "#a6782c");
   const image = entry.image ? `<img class="avatar" src="${entry.image}" alt="">` : "";
-  card.innerHTML = `${image}<strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.role || entry.date || entry.relation || entry.kind || entry.type)}</span><span>${escapeHtml(entry.secret || entry.notes || "")}</span><button class="edit-chip" data-edit="${entry.type}" data-id="${entry.id}">Редактировать</button>`;
+  card.innerHTML = `${image}<strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.role || entry.date || entry.relation || entry.kind || entry.type)}</span><span>${escapeHtml(entry.secret || entry.notes || "")}</span><div class="card-controls"><button class="edit-chip" data-edit="${entry.type}" data-id="${entry.id}">Редактировать</button><button class="delete-chip" data-delete="${entry.type}" data-id="${entry.id}">Удалить</button></div>`;
   enableDrag(card);
   return card;
 }
@@ -137,7 +137,6 @@ function addThread(root, a, b) {
 function renderCharacters() {
   $("#characterList").innerHTML = state.characters.map((char) => `
     <article class="card character-card">
-      <button class="card-action" data-delete="characters" data-id="${char.id}" aria-label="Удалить">×</button>
       ${char.image ? `<img class="portrait" src="${char.image}" alt="">` : `<div class="portrait empty"></div>`}
       <small style="color:${char.color || "#8e3036"}">${escapeHtml(char.role || "персонаж")}</small>
       <h3>${escapeHtml(char.name)}</h3>
@@ -148,7 +147,10 @@ function renderCharacters() {
       </dl>
       <p><strong>Цель:</strong> ${escapeHtml(char.motive || "не задано")}</p>
       <p><strong>Секрет:</strong> ${escapeHtml(char.secret || "не задано")}</p>
-      <button data-edit="characters" data-id="${char.id}">Редактировать</button>
+      <div class="card-controls">
+        <button data-edit="characters" data-id="${char.id}">Редактировать</button>
+        <button class="danger soft" data-delete="characters" data-id="${char.id}">Удалить</button>
+      </div>
     </article>
   `).join("");
 }
@@ -157,11 +159,13 @@ function renderTimeline() {
   const list = $("#timelineList");
   list.innerHTML = state.events.map((event) => `
     <article class="timeline-item draggable-row" data-type="events" data-id="${event.id}" style="--pin:${event.color || "#53695a"}">
-      <button class="card-action" data-delete="events" data-id="${event.id}" aria-label="Удалить">×</button>
       <small>${escapeHtml(event.date)}</small>
       <h3>${escapeHtml(event.title)}</h3>
       <p>${escapeHtml(event.notes || "")}</p>
-      <button data-edit="events" data-id="${event.id}">Редактировать</button>
+      <div class="card-controls">
+        <button data-edit="events" data-id="${event.id}">Редактировать</button>
+        <button class="danger soft" data-delete="events" data-id="${event.id}">Удалить</button>
+      </div>
     </article>
   `).join("");
   list.querySelectorAll(".draggable-row").forEach(enableRowDrag);
@@ -179,11 +183,13 @@ function renderFreeCanvas(selector, type) {
 function renderTracker() {
   $("#trackerList").innerHTML = state.tracker.map((entry) => `
     <article class="card tracker-card" data-type="tracker" data-id="${entry.id}">
-      <button class="card-action" data-delete="tracker" data-id="${entry.id}" aria-label="Удалить">×</button>
       <small>${escapeHtml(entry.kind)}</small>
       <h3>${escapeHtml(entry.title)}</h3>
       <p>${escapeHtml(entry.notes || "пока без заметок")}</p>
-      <button data-edit="tracker" data-id="${entry.id}">Редактировать</button>
+      <div class="card-controls">
+        <button data-edit="tracker" data-id="${entry.id}">Редактировать</button>
+        <button class="danger soft" data-delete="tracker" data-id="${entry.id}">Удалить</button>
+      </div>
     </article>
   `).join("");
 }
@@ -193,11 +199,13 @@ function renderArchive() {
     <div class="toolbar"><button data-quick="archive">Добавить материал</button></div>
     <div class="cards">${state.archive.map((entry) => `
       <article class="card">
-        <button class="card-action" data-delete="archive" data-id="${entry.id}" aria-label="Удалить">×</button>
         <small>${escapeHtml(entry.kind || "материал")}</small>
         <h3>${escapeHtml(entry.title)}</h3>
         <p>${escapeHtml(entry.notes || "")}</p>
-        <button data-edit="archive" data-id="${entry.id}">Редактировать</button>
+        <div class="card-controls">
+          <button data-edit="archive" data-id="${entry.id}">Редактировать</button>
+          <button class="danger soft" data-delete="archive" data-id="${entry.id}">Удалить</button>
+        </div>
       </article>`).join("")}</div>`;
 }
 
@@ -308,6 +316,11 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 });
 
 document.body.addEventListener("click", (event) => {
+  const editableCard = event.target.closest(".card[data-type], .pin-card[data-type], .timeline-item[data-type]");
+  if (editableCard && !event.target.closest("button, input, textarea, select")) {
+    openEditor(editableCard.dataset.type, editableCard.dataset.id);
+    return;
+  }
   const edit = event.target.closest("[data-edit]");
   if (edit) openEditor(edit.dataset.edit, edit.dataset.id);
   const del = event.target.closest("[data-delete]");
