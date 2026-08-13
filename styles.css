@@ -312,6 +312,19 @@ h2 {
   background: var(--rust);
 }
 
+#linkModeBtn.active {
+  background: var(--plum);
+}
+
+.link-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  color: var(--plum);
+  font-weight: 700;
+}
+
 .view {
   display: none;
 }
@@ -379,6 +392,11 @@ h2 {
 
 .pin-card:active {
   cursor: grabbing;
+}
+
+.pin-card.link-selected {
+  outline: 3px solid var(--ochre);
+  outline-offset: 4px;
 }
 
 .pin-card::before {

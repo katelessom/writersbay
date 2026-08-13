@@ -30,6 +30,7 @@ const boardTypes = ["characters", "events", "clues", "notesBoard", "tracker"];
 let boardFilters = new Set(boardTypes);
 let editing = null;
 let pendingLink = null;
+let linkMode = false;
 
 function item(type, data = {}) {
   return { id: createId(), type, x: 20, y: 20, ...data };
@@ -109,6 +110,7 @@ function render() {
   $("#projectNotes").textContent = state.notes || "";
   $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive", "notebook"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
   renderFilters();
+  renderLinkStatus();
   renderProjectList();
   renderBoard();
   renderCharacters();
@@ -117,6 +119,13 @@ function render() {
   renderMindMap();
   renderNotebook();
   renderArchive();
+}
+
+function renderLinkStatus() {
+  const status = $("#linkStatus");
+  if (!status) return;
+  $("#linkModeBtn")?.classList.toggle("active", linkMode);
+  status.textContent = linkMode ? (pendingLink ? "Выбери второй элемент" : "Выбери первый элемент") : "";
 }
 
 function renderProjectList() {
@@ -160,6 +169,7 @@ function makePin(entry) {
   card.className = `pin-card type-${entry.type}`;
   card.dataset.id = entry.id;
   card.dataset.type = entry.type;
+  if (pendingLink === entry.id) card.classList.add("link-selected");
   card.style.left = `${entry.x}%`;
   card.style.top = `${entry.y}%`;
   card.style.setProperty("--pin", entry.color || "#8b6a18");
@@ -261,6 +271,7 @@ function renderNotebook() {
 
 function enableDrag(el) {
   el.addEventListener("pointerdown", (event) => {
+    if (linkMode) return;
     if (event.target.closest("button")) return;
     event.preventDefault();
     const parent = el.parentElement.getBoundingClientRect();
@@ -416,6 +427,8 @@ document.body.addEventListener("click", (event) => {
   }
   const link = event.target.closest("[data-link]");
   if (link) return handleLink(link.dataset.id);
+  const boardCard = event.target.closest("#caseboard .pin-card[data-id]");
+  if (linkMode && boardCard && !event.target.closest("button")) return chooseLinkTarget(boardCard.dataset.id);
   const thread = event.target.closest(".thread[data-link-id]");
   if (thread && event.detail >= 2) {
     state.links = state.links.filter((entry) => entry.id !== thread.dataset.linkId);
@@ -439,6 +452,7 @@ document.body.addEventListener("click", (event) => {
 });
 
 $("#projectTitle").addEventListener("input", (event) => { state.title = event.target.textContent.trim() || "Без названия"; save(); });
+$("#linkModeBtn").addEventListener("click", toggleLinkMode);
 $("#editorForm").addEventListener("submit", saveEditor);
 $("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
 $("#deleteCurrent").addEventListener("click", () => {
@@ -505,6 +519,21 @@ function handleLink(id) {
   pendingLink = null;
   save();
   render();
+}
+
+function toggleLinkMode() {
+  linkMode = !linkMode;
+  pendingLink = null;
+  render();
+}
+
+function chooseLinkTarget(id) {
+  if (!pendingLink) {
+    pendingLink = id;
+    render();
+    return;
+  }
+  handleLink(id);
 }
 
 function labelFor(type) {
