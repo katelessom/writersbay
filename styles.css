@@ -493,6 +493,16 @@ form {
   gap: 8px;
 }
 
+.action-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.action-panel button {
+  min-height: 46px;
+}
+
 #characterForm {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;

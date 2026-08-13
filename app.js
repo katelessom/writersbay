@@ -364,6 +364,25 @@ function addQuick(type) {
   render();
 }
 
+function createEntry(type) {
+  const defaults = {
+    characters: { name: "Новый персонаж", role: "", color: "#173a24" },
+    events: { title: "Новое событие", date: "", chapter: "" },
+    mind: { title: "Новый узел" },
+    notebook: { title: "Новая страница", body: "" },
+    archive: { title: "Новый материал", kind: "референс" },
+    family: { title: "Новый родственник", relation: "" },
+    clues: { title: "Новая улика", kind: "Факт" },
+    notesBoard: { title: "Новая заметка", kind: "Версия канона" },
+    tracker: { title: "Новая тайна", kind: "Тайна" }
+  };
+  const entry = item(type, defaults[type] || { title: "Новый объект" });
+  state[type].push(entry);
+  save();
+  render();
+  openEditor(type, entry.id);
+}
+
 document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => {
     document.querySelectorAll(".nav-item, .view").forEach((el) => el.classList.remove("active"));
@@ -413,19 +432,13 @@ document.body.addEventListener("click", (event) => {
   }
   const quick = event.target.closest("[data-quick]");
   if (quick) return addQuick(quick.dataset.quick);
+  const create = event.target.closest("[data-create]");
+  if (create) return createEntry(create.dataset.create);
   const editable = event.target.closest(".dossier-card[data-type], .archive-card[data-type], .timeline-item[data-type], .notebook-page[data-type]");
   if (editable) openEditor(editable.dataset.type, editable.dataset.id);
 });
 
 $("#projectTitle").addEventListener("input", (event) => { state.title = event.target.textContent.trim() || "Без названия"; save(); });
-bindForm("#characterForm", (data) => state.characters.push(item("characters", data)));
-bindForm("#eventForm", (data) => state.events.push(item("events", data)));
-bindForm("#mindForm", (data) => state.mind.push(item("mind", data)));
-bindAsyncForm("#notePageForm", async (data, form) => {
-  const file = form.elements.image.files[0];
-  delete data.image;
-  state.notebook.push(item("notebook", { ...data, image: file ? await fileToDataUrl(file) : "" }));
-});
 $("#editorForm").addEventListener("submit", saveEditor);
 $("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
 $("#deleteCurrent").addEventListener("click", () => {
@@ -479,30 +492,6 @@ function replaceCurrentProject(project) {
   state = project;
   save();
   render();
-}
-
-function bindForm(selector, onSubmit) {
-  const form = $(selector);
-  if (!form) return;
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    onSubmit(Object.fromEntries(new FormData(event.target)));
-    event.target.reset();
-    save();
-    render();
-  });
-}
-
-function bindAsyncForm(selector, onSubmit) {
-  const form = $(selector);
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await onSubmit(Object.fromEntries(new FormData(event.target)), event.target);
-    event.target.reset();
-    save();
-    render();
-  });
 }
 
 function handleLink(id) {

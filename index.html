@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writers Bay</title>
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="styles.css?v=18" />
   </head>
   <body>
     <div class="app">
@@ -84,36 +84,20 @@
 
           <section id="characters" class="view">
             <div class="split">
-              <form id="characterForm" class="panel">
+              <div class="panel action-panel">
                 <h3>Досье персонажа</h3>
-                <input name="name" placeholder="Имя" required />
-                <input name="role" placeholder="Роль в истории" />
-                <input name="color" placeholder="Цвет/маркер" />
-                <input name="height" placeholder="Рост" />
-                <input name="weight" placeholder="Вес" />
-                <input name="age" placeholder="Возраст" />
-                <textarea name="motive" placeholder="Чего хочет"></textarea>
-                <textarea name="secret" placeholder="Что скрывает"></textarea>
-                <textarea name="appearance" placeholder="Внешность"></textarea>
-                <textarea name="voice" placeholder="Голос, речь, привычки"></textarea>
-                <textarea name="arc" placeholder="Арка персонажа"></textarea>
-                <button type="submit">Добавить</button>
-              </form>
+                <button data-create="characters">Добавить досье</button>
+              </div>
               <div id="characterList" class="cards"></div>
             </div>
           </section>
 
           <section id="timeline" class="view">
             <div class="split">
-              <form id="eventForm" class="panel">
+              <div class="panel action-panel">
                 <h3>Событие</h3>
-                <input name="date" placeholder="Дата или порядок" required />
-                <input name="chapter" placeholder="Глава" />
-                <input name="characters" placeholder="Персонажи в событии" />
-                <input name="title" placeholder="Название события" required />
-                <textarea name="notes" placeholder="Что меняет в сюжете"></textarea>
-                <button type="submit">Добавить</button>
-              </form>
+                <button data-create="events">Добавить событие</button>
+              </div>
               <div id="timelineList" class="timeline-list"></div>
             </div>
           </section>
@@ -127,25 +111,20 @@
 
           <section id="mindmap" class="view">
             <div class="split">
-              <form id="mindForm" class="panel">
+              <div class="panel action-panel">
                 <h3>Узел карты</h3>
-                <input name="title" placeholder="Идея, тема или вопрос" required />
-                <button type="submit">Добавить</button>
-              </form>
+                <button data-create="mind">Добавить узел</button>
+              </div>
               <div class="mindmap" id="mindmapCanvas"></div>
             </div>
           </section>
 
           <section id="notebook" class="view">
             <div class="split">
-              <form id="notePageForm" class="panel">
+              <div class="panel action-panel">
                 <h3>Страница блокнота</h3>
-                <input name="title" placeholder="Заголовок" required />
-                <input name="caption" placeholder="Подпись к картинке" />
-                <input name="image" type="file" accept="image/*" />
-                <textarea name="body" placeholder="Текст заметки"></textarea>
-                <button type="submit">Добавить</button>
-              </form>
+                <button data-create="notebook">Добавить страницу</button>
+              </div>
               <div id="notebookPages" class="notebook-pages"></div>
             </div>
           </section>
@@ -182,6 +161,6 @@
         </footer>
       </form>
     </dialog>
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
   </body>
 </html>
