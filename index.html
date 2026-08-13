@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writers Bay</title>
-    <link rel="stylesheet" href="styles.css?v=23" />
+    <link rel="stylesheet" href="styles.css?v=27" />
   </head>
   <body>
     <div class="app">
@@ -102,17 +102,25 @@
           <section id="family" class="view">
             <div class="toolbar">
               <button data-quick="relative">Добавить родственника</button>
+              <button id="familyLinkModeBtn" type="button">Связать родственников</button>
+              <span id="familyLinkStatus" class="link-status"></span>
             </div>
             <div class="family-tree" id="familyTree"></div>
           </section>
 
           <section id="mindmap" class="view">
-            <div class="split">
-              <div class="panel action-panel">
-                <h3>Узел карты</h3>
+            <div class="mind-shell">
+              <div class="toolbar mind-toolbar">
                 <button data-create="mind">Добавить узел</button>
+                <button id="mindLinkModeBtn" type="button">Связать узлы</button>
+                <button id="mindFitBtn" type="button">Показать все</button>
+                <button id="mindZoomOutBtn" class="icon-tool" type="button" aria-label="Уменьшить">-</button>
+                <span id="mindZoomLabel" class="zoom-label">100%</span>
+                <button id="mindZoomInBtn" class="icon-tool" type="button" aria-label="Увеличить">+</button>
               </div>
-              <div class="mindmap" id="mindmapCanvas"></div>
+              <div class="mindmap" id="mindmapCanvas">
+                <div class="mind-stage" id="mindStage"></div>
+              </div>
             </div>
           </section>
 
@@ -158,6 +166,6 @@
         </footer>
       </form>
     </dialog>
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=27"></script>
   </body>
 </html>

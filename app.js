@@ -29,14 +29,18 @@ const selectValues = ["Тайна", "Чеховское ружье", "Дыра �
 const boardTypes = ["characters", "events", "clues", "notesBoard", "tracker"];
 let editing = null;
 let pendingLink = null;
+let pendingLinkType = null;
 let linkMode = false;
+let pendingMindLink = null;
+let mindLinkMode = false;
+let mindView = { x: 0, y: 0, scale: 1 };
 
 function item(type, data = {}) {
   return { id: createId(), type, x: 20, y: 20, ...data };
 }
 
 function emptyProject() {
-  return { id: createId(), title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", links: [], characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [], notebook: [] };
+  return { id: createId(), title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", links: [], familyLinks: [], mindLinks: [], characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [], notebook: [] };
 }
 
 const seed = {
@@ -62,7 +66,9 @@ const seed = {
   mind: [item("mind", { title: "Главная тайна", x: 42, y: 42 }), item("mind", { title: "Мотивы", x: 18, y: 20 }), item("mind", { title: "Темы", x: 68, y: 20 }), item("mind", { title: "Локации", x: 18, y: 70 })],
   archive: [item("archive", { title: "Референс особняка", kind: "ссылка", notes: "Добавить ссылку или описание источника." })]
   ,notebook: [item("notebook", { title: "Первая заметка", body: "Здесь можно вести страницы блокнота по сценам, главам, идеям и правкам.", caption: "" })],
-  links: []
+  links: [],
+  familyLinks: [],
+  mindLinks: []
 };
 
 let appState = loadAppState();
@@ -94,6 +100,8 @@ function normalize(data) {
   const base = emptyProject();
   Object.assign(base, data);
   base.id = base.id || createId();
+  base.familyLinks = Array.isArray(base.familyLinks) ? base.familyLinks : [];
+  base.mindLinks = Array.isArray(base.mindLinks) ? base.mindLinks : [];
   if (Array.isArray(data.notes) && !data.notesBoard) base.notesBoard = data.notes;
   Object.keys(base).forEach((key) => {
     if (Array.isArray(base[key])) base[key] = base[key].map((entry) => ({ ...item(key), ...entry, type: key }));
@@ -127,17 +135,22 @@ function render() {
 function renderLinkStatus() {
   const status = $("#linkStatus");
   if (!status) return;
-  $("#linkModeBtn")?.classList.toggle("active", linkMode);
-  status.textContent = linkMode ? (pendingLink ? "Выбери второй элемент" : "Выбери первый элемент") : "";
+  $("#linkModeBtn")?.classList.toggle("active", linkMode && pendingLinkType === "board");
+  status.textContent = linkMode && pendingLinkType === "board" ? (pendingLink ? "Выбери второй элемент" : "Выбери первый элемент") : "";
+  $("#familyLinkModeBtn")?.classList.toggle("active", linkMode && pendingLinkType === "family");
+  const familyStatus = $("#familyLinkStatus");
+  if (familyStatus) familyStatus.textContent = linkMode && pendingLinkType === "family" ? (pendingLink ? "Выбери второго родственника" : "Выбери первого родственника") : "";
 }
 
 function renderProjectList() {
   $("#projectList").innerHTML = appState.projects.map((project) => `
-    <button type="button" class="project-pill ${project.id === state.id ? "active" : ""}" data-project="${project.id}">
-      <strong>${escapeHtml(project.title || "Без названия")}</strong>
-      <span>${escapeHtml(project.currentAt || "проект")}</span>
-      ${appState.projects.length > 1 ? `<span class="project-delete" data-delete-project="${project.id}">${icons.delete}</span>` : ""}
-    </button>
+    <div class="project-pill ${project.id === state.id ? "active" : ""}">
+      <button type="button" class="project-select" data-project="${project.id}" aria-label="Открыть проект ${escapeHtml(project.title || "Без названия")}">
+        <strong>${escapeHtml(project.title || "Без названия")}</strong>
+        <span>${escapeHtml(project.currentAt || "проект")}</span>
+      </button>
+      ${appState.projects.length > 1 ? `<button type="button" class="project-delete" data-delete-project="${project.id}" aria-label="Удалить проект">${icons.delete}</button>` : ""}
+    </div>
   `).join("");
 }
 
@@ -147,6 +160,7 @@ function selectProject(id) {
   appState.activeProjectId = id;
   state = project;
   pendingLink = null;
+  pendingLinkType = null;
   linkMode = false;
   save();
   render();
@@ -158,6 +172,7 @@ function deleteProject(id) {
   appState.activeProjectId = appState.projects[0].id;
   state = currentProject();
   pendingLink = null;
+  pendingLinkType = null;
   linkMode = false;
   save();
   render();
@@ -171,18 +186,16 @@ function renderBoard() {
   const board = $("#caseboard");
   board.innerHTML = "";
   const items = boardItems();
-  state.links.forEach((link) => {
-    const a = items.find((entry) => entry.id === link.from);
-    const b = items.find((entry) => entry.id === link.to);
-    if (a && b) addThread(board, a, b, link.id);
-  });
+  board.appendChild(makeLinkLayer("board"));
   items.forEach((entry) => board.appendChild(makePin(entry)));
+  requestAnimationFrame(() => drawDomLinks(board, state.links, "board"));
 }
 
 function iconButton(kind, type, id) {
   const attr = kind === "edit" ? "data-edit" : kind === "link" ? "data-link" : "data-delete";
   const label = kind === "edit" ? "Редактировать" : kind === "link" ? "Связать" : "Удалить";
-  return `<button class="icon-tool ${kind}" ${attr}="${type}" data-id="${id}" aria-label="${label}">${icons[kind]}</button>`;
+  const linkType = kind === "link" ? ` data-link-type="${type}"` : "";
+  return `<button class="icon-tool ${kind}" ${attr}="${type}"${linkType} data-id="${id}" aria-label="${label}">${icons[kind]}</button>`;
 }
 
 function makePin(entry) {
@@ -200,18 +213,68 @@ function makePin(entry) {
   return card;
 }
 
-function addThread(root, a, b, linkId = "") {
-  const line = document.createElement("div");
-  const ax = a.x + 9, ay = a.y + 8, bx = b.x + 9, by = b.y + 8;
-  const dx = bx - ax, dy = by - ay;
-  line.className = "thread";
-  line.dataset.linkId = linkId;
-  if (linkId) line.title = "Двойной клик удалит связь";
-  line.style.left = `${ax}%`;
-  line.style.top = `${ay}%`;
-  line.style.width = `${Math.hypot(dx, dy)}%`;
-  line.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
-  root.appendChild(line);
+function makeLinkLayer(surface) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("link-layer", `link-layer-${surface}`);
+  return svg;
+}
+
+function makeLinkPath(points, id, surface) {
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  const { ax, ay, bx, by } = points;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const bend = Math.max(48, Math.min(180, Math.hypot(dx, dy) * .32));
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const c1x = horizontal ? ax + bend * Math.sign(dx || 1) : ax;
+  const c1y = horizontal ? ay : ay + bend * Math.sign(dy || 1);
+  const c2x = horizontal ? bx - bend * Math.sign(dx || 1) : bx;
+  const c2y = horizontal ? by : by - bend * Math.sign(dy || 1);
+  path.classList.add("canvas-link", `canvas-link-${surface}`);
+  path.dataset.linkId = id;
+  path.dataset.linkSurface = surface;
+  path.setAttribute("d", `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`);
+  path.setAttribute("vector-effect", "non-scaling-stroke");
+  return path;
+}
+
+function drawDomLinks(root, links, surface) {
+  const svg = root.querySelector(".link-layer");
+  if (!svg) return;
+  svg.innerHTML = "";
+  const rootRect = root.getBoundingClientRect();
+  links.forEach((link) => {
+    const a = root.querySelector(`.pin-card[data-id="${CSS.escape(link.from)}"]`);
+    const b = root.querySelector(`.pin-card[data-id="${CSS.escape(link.to)}"]`);
+    if (!a || !b) return;
+    svg.appendChild(makeLinkPath(cardEdgePoints(a.getBoundingClientRect(), b.getBoundingClientRect(), rootRect), link.id, surface));
+  });
+}
+
+function cardEdgePoints(a, b, root) {
+  const ac = { x: a.left + a.width / 2, y: a.top + a.height / 2 };
+  const bc = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+  const ap = cardBorderPoint(ac, bc, a);
+  const bp = cardBorderPoint(bc, ac, b);
+  return { ax: ap.x - root.left, ay: ap.y - root.top, bx: bp.x - root.left, by: bp.y - root.top };
+}
+
+function cardBorderPoint(from, to, rect) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const halfW = rect.width / 2;
+  const halfH = rect.height / 2;
+  const scale = Math.min(halfW / Math.max(Math.abs(dx), .01), halfH / Math.max(Math.abs(dy), .01));
+  return { x: from.x + dx * scale, y: from.y + dy * scale };
+}
+
+function updateSurfaceLinks(card) {
+  if (card.closest("#caseboard")) return drawDomLinks($("#caseboard"), state.links, "board");
+  if (card.closest("#familyTree")) return drawDomLinks($("#familyTree"), state.familyLinks, "family");
+  if (card.closest("#mindStage")) {
+    const defaultLinks = state.mind.slice(1).map((entry) => ({ id: "", from: state.mind[0]?.id, to: entry.id }));
+    drawDomLinks($("#mindStage"), [...defaultLinks, ...state.mindLinks], "mind");
+  }
 }
 
 function renderCharacters() {
@@ -252,23 +315,34 @@ function renderTimeline() {
 function renderFamilyTree() {
   const root = $("#familyTree");
   root.innerHTML = `<div class="family-trunk"></div>`;
+  root.appendChild(makeLinkLayer("family"));
   state.family.forEach((entry) => {
     const card = makePin(entry);
     card.classList.add("family-node");
+    if (pendingLink === entry.id) card.classList.add("link-selected");
     root.appendChild(card);
   });
+  requestAnimationFrame(() => drawDomLinks(root, state.familyLinks, "family"));
 }
 
 function renderMindMap() {
-  const root = $("#mindmapCanvas");
+  const root = $("#mindStage");
+  if (!root) return;
   root.innerHTML = "";
-  const center = state.mind[0];
-  state.mind.forEach((entry, index) => index && center && addThread(root, center, entry));
+  applyMindTransform();
+  const defaultLinks = state.mind.slice(1).map((entry) => ({ id: "", from: state.mind[0]?.id, to: entry.id }));
+  const links = [...defaultLinks, ...state.mindLinks];
+  root.appendChild(makeLinkLayer("mind"));
   state.mind.forEach((entry, index) => {
     const card = makePin(entry);
     card.classList.add(index === 0 ? "mind-center" : "mind-branch");
+    card.classList.add("mind-node");
+    if (pendingMindLink === entry.id) card.classList.add("mind-link-selected");
     root.appendChild(card);
   });
+  requestAnimationFrame(() => drawDomLinks(root, links, "mind"));
+  $("#mindLinkModeBtn")?.classList.toggle("active", mindLinkMode);
+  $("#mindZoomLabel") && ($("#mindZoomLabel").textContent = `${Math.round(mindView.scale * 100)}%`);
 }
 
 function renderArchive() {
@@ -293,19 +367,24 @@ function renderNotebook() {
 function enableDrag(el) {
   el.addEventListener("pointerdown", (event) => {
     if (linkMode) return;
+    if (mindLinkMode && el.dataset.type === "mind") return;
     if (event.target.closest("button")) return;
     event.preventDefault();
-    const parent = el.parentElement.getBoundingClientRect();
+    const isMind = el.parentElement?.id === "mindStage";
+    const parent = (isMind ? $("#mindmapCanvas") : el.parentElement).getBoundingClientRect();
     let moved = false;
     const startX = event.clientX, startY = event.clientY;
     el.setPointerCapture(event.pointerId);
     const move = (moveEvent) => {
       moved = moved || Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4;
       const entry = findEntry(el.dataset.type, el.dataset.id);
-      entry.x = clamp(((moveEvent.clientX - parent.left) / parent.width) * 100, 1, 92);
-      entry.y = clamp(((moveEvent.clientY - parent.top) / parent.height) * 100, 1, 90);
+      const localX = isMind ? (moveEvent.clientX - parent.left - mindView.x) / mindView.scale : moveEvent.clientX - parent.left;
+      const localY = isMind ? (moveEvent.clientY - parent.top - mindView.y) / mindView.scale : moveEvent.clientY - parent.top;
+      entry.x = clamp((localX / parent.width) * 100, 1, 92);
+      entry.y = clamp((localY / parent.height) * 100, 1, 90);
       el.style.left = `${entry.x}%`;
       el.style.top = `${entry.y}%`;
+      updateSurfaceLinks(el);
     };
     const up = () => {
       el.removeEventListener("pointermove", move);
@@ -382,13 +461,15 @@ function fileToDataUrl(file) {
 }
 
 function addQuick(type) {
+  const boardPos = () => nextCanvasPosition(boardItems().length, "board");
+  const familyPos = () => nextCanvasPosition(state.family.length, "family");
   const factories = {
-    character: () => state.characters.push(item("characters", { name: "Новый персонаж", role: "роль", color: "#173a24" })),
-    event: () => state.events.push(item("events", { date: "Сцена ?", chapter: "Глава ?", title: "Новое событие" })),
-    clue: () => state.clues.push(item("clues", { kind: "Факт", title: "Новая улика", notes: "Что она доказывает" })),
-    note: () => state.notesBoard.push(item("notesBoard", { kind: "Версия канона", title: "Новая заметка", notes: "" })),
-    tracker: () => state.tracker.push(item("tracker", { kind: "Тайна", title: "Новая тайна", notes: "" })),
-    relative: () => state.family.push(item("family", { title: "Новый родственник", relation: "связь" })),
+    character: () => state.characters.push(item("characters", { name: "Новый персонаж", role: "роль", color: "#173a24", ...boardPos() })),
+    event: () => state.events.push(item("events", { date: "Сцена ?", chapter: "Глава ?", title: "Новое событие", ...boardPos() })),
+    clue: () => state.clues.push(item("clues", { kind: "Факт", title: "Новая улика", notes: "Что она доказывает", ...boardPos() })),
+    note: () => state.notesBoard.push(item("notesBoard", { kind: "Версия канона", title: "Новая заметка", notes: "", ...boardPos() })),
+    tracker: () => state.tracker.push(item("tracker", { kind: "Тайна", title: "Новая тайна", notes: "", ...boardPos() })),
+    relative: () => state.family.push(item("family", { title: "Новый родственник", relation: "связь", ...familyPos() })),
     archive: () => state.archive.push(item("archive", { title: "Новый материал", kind: "референс" }))
   };
   factories[type]?.();
@@ -396,12 +477,17 @@ function addQuick(type) {
   render();
 }
 
+function nextCanvasPosition(count, surface = "board") {
+  if (surface === "family") return { x: 14 + (count % 4) * 22, y: 12 + Math.floor(count / 4) * 24 };
+  return { x: 6 + (count % 4) * 22, y: 10 + Math.floor(count / 4) * 22 };
+}
+
 function createEntry(type) {
   const defaults = {
     characters: { name: "Новый персонаж", role: "", color: "#173a24" },
     events: { title: "Новое событие", date: "", chapter: "" },
     mind: { title: "Новый узел" },
-    notebook: { title: "Новая страница", body: "" },
+    notebook: { title: "Новая страница", body: "Начните писать здесь." },
     archive: { title: "Новый материал", kind: "референс" },
     family: { title: "Новый родственник", relation: "" },
     clues: { title: "Новая улика", kind: "Факт" },
@@ -409,6 +495,16 @@ function createEntry(type) {
     tracker: { title: "Новая тайна", kind: "Тайна" }
   };
   const entry = item(type, defaults[type] || { title: "Новый объект" });
+  if (type === "mind") {
+    const count = state.mind.length;
+    const angle = count * 1.9;
+    entry.x = clamp(48 + Math.cos(angle) * 24, 4, 86);
+    entry.y = clamp(44 + Math.sin(angle) * 24, 6, 84);
+  } else if (type === "family") {
+    Object.assign(entry, nextCanvasPosition(state.family.length, "family"));
+  } else if (boardTypes.includes(type)) {
+    Object.assign(entry, nextCanvasPosition(boardItems().length, "board"));
+  }
   state[type].push(entry);
   save();
   render();
@@ -425,12 +521,18 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 
 document.body.addEventListener("click", (event) => {
   const link = event.target.closest("[data-link]");
-  if (link) return handleLink(link.dataset.id);
+  if (link) return link.dataset.linkType === "mind" ? handleMindLink(link.dataset.id) : handleLink(link.dataset.id, link.dataset.linkType);
+  const mindCard = event.target.closest("#mindStage .pin-card[data-id]");
+  if (mindLinkMode && mindCard && !event.target.closest("button")) return chooseMindLinkTarget(mindCard.dataset.id);
   const boardCard = event.target.closest("#caseboard .pin-card[data-id]");
-  if (linkMode && boardCard && !event.target.closest("button")) return chooseLinkTarget(boardCard.dataset.id);
-  const thread = event.target.closest(".thread[data-link-id]");
-  if (thread && event.detail >= 2) {
-    state.links = state.links.filter((entry) => entry.id !== thread.dataset.linkId);
+  if (linkMode && pendingLinkType !== "family" && boardCard && !event.target.closest("button")) return chooseLinkTarget(boardCard.dataset.id, "board");
+  const familyCard = event.target.closest("#familyTree .pin-card[data-id]");
+  if (linkMode && pendingLinkType === "family" && familyCard && !event.target.closest("button")) return chooseLinkTarget(familyCard.dataset.id, "family");
+  const canvasLink = event.target.closest(".canvas-link[data-link-id]");
+  if (canvasLink && canvasLink.dataset.linkId && event.detail >= 2) {
+    state.links = state.links.filter((entry) => entry.id !== canvasLink.dataset.linkId);
+    state.familyLinks = state.familyLinks.filter((entry) => entry.id !== canvasLink.dataset.linkId);
+    state.mindLinks = state.mindLinks.filter((entry) => entry.id !== canvasLink.dataset.linkId);
     save();
     return render();
   }
@@ -439,6 +541,8 @@ document.body.addEventListener("click", (event) => {
   const del = event.target.closest("[data-delete]");
   if (del) {
     state[del.dataset.delete] = state[del.dataset.delete].filter((entry) => entry.id !== del.dataset.id);
+    if (del.dataset.delete === "family") state.familyLinks = state.familyLinks.filter((link) => link.from !== del.dataset.id && link.to !== del.dataset.id);
+    if (del.dataset.delete === "mind") state.mindLinks = state.mindLinks.filter((link) => link.from !== del.dataset.id && link.to !== del.dataset.id);
     save();
     return render();
   }
@@ -452,10 +556,10 @@ document.body.addEventListener("click", (event) => {
 
 $("#projectTitle").addEventListener("input", (event) => { state.title = event.target.textContent.trim() || "Без названия"; save(); });
 $("#projectList").addEventListener("click", (event) => {
+  event.stopPropagation();
   const remove = event.target.closest("[data-delete-project]");
   if (remove) {
     event.preventDefault();
-    event.stopPropagation();
     return deleteProject(remove.dataset.deleteProject);
   }
   const project = event.target.closest("[data-project]");
@@ -464,11 +568,20 @@ $("#projectList").addEventListener("click", (event) => {
     return selectProject(project.dataset.project);
   }
 });
-$("#linkModeBtn").addEventListener("click", toggleLinkMode);
+$("#linkModeBtn").addEventListener("click", () => toggleLinkMode("board"));
+$("#familyLinkModeBtn")?.addEventListener("click", () => toggleLinkMode("family"));
+$("#mindLinkModeBtn")?.addEventListener("click", toggleMindLinkMode);
+$("#mindZoomInBtn")?.addEventListener("click", () => setMindZoom(mindView.scale * 1.15));
+$("#mindZoomOutBtn")?.addEventListener("click", () => setMindZoom(mindView.scale / 1.15));
+$("#mindFitBtn")?.addEventListener("click", fitMindMap);
+$("#mindmapCanvas")?.addEventListener("wheel", handleMindWheel, { passive: false });
+$("#mindmapCanvas")?.addEventListener("pointerdown", startMindPan);
 $("#editorForm").addEventListener("submit", saveEditor);
 $("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
 $("#deleteCurrent").addEventListener("click", () => {
   if (editing.type !== "project") state[editing.type] = state[editing.type].filter((entry) => entry.id !== editing.id);
+  if (editing.type === "family") state.familyLinks = state.familyLinks.filter((link) => link.from !== editing.id && link.to !== editing.id);
+  if (editing.type === "mind") state.mindLinks = state.mindLinks.filter((link) => link.from !== editing.id && link.to !== editing.id);
   $("#editorDialog").close();
   save();
   render();
@@ -520,32 +633,118 @@ function replaceCurrentProject(project) {
   render();
 }
 
-function handleLink(id) {
+function handleLink(id, type = "board") {
+  const linkType = type === "family" ? "family" : "board";
+  const links = linkType === "family" ? state.familyLinks : state.links;
   if (!pendingLink) {
     pendingLink = id;
+    pendingLinkType = linkType;
+    linkMode = true;
+    render();
     return;
   }
-  if (pendingLink !== id && !state.links.some((link) => (link.from === pendingLink && link.to === id) || (link.from === id && link.to === pendingLink))) {
-    state.links.push({ id: createId(), from: pendingLink, to: id });
+  if (pendingLinkType !== linkType) {
+    pendingLink = id;
+    pendingLinkType = linkType;
+    render();
+    return;
+  }
+  if (pendingLink !== id && !links.some((link) => (link.from === pendingLink && link.to === id) || (link.from === id && link.to === pendingLink))) {
+    links.push({ id: createId(), from: pendingLink, to: id });
   }
   pendingLink = null;
+  pendingLinkType = linkMode ? linkType : null;
   save();
   render();
 }
 
-function toggleLinkMode() {
-  linkMode = !linkMode;
+function toggleLinkMode(type = "board") {
+  const nextType = type === "family" ? "family" : "board";
+  linkMode = pendingLinkType === nextType ? !linkMode : true;
   pendingLink = null;
+  pendingLinkType = linkMode ? nextType : null;
   render();
 }
 
-function chooseLinkTarget(id) {
+function chooseLinkTarget(id, type = "board") {
   if (!pendingLink) {
     pendingLink = id;
+    pendingLinkType = type === "family" ? "family" : "board";
     render();
     return;
   }
-  handleLink(id);
+  handleLink(id, type);
+}
+
+function toggleMindLinkMode() {
+  mindLinkMode = !mindLinkMode;
+  pendingMindLink = null;
+  render();
+}
+
+function handleMindLink(id) {
+  if (!mindLinkMode) mindLinkMode = true;
+  chooseMindLinkTarget(id);
+}
+
+function chooseMindLinkTarget(id) {
+  if (!pendingMindLink) {
+    pendingMindLink = id;
+    render();
+    return;
+  }
+  if (pendingMindLink !== id && !state.mindLinks.some((link) => (link.from === pendingMindLink && link.to === id) || (link.from === id && link.to === pendingMindLink))) {
+    state.mindLinks.push({ id: createId(), from: pendingMindLink, to: id });
+  }
+  pendingMindLink = null;
+  save();
+  render();
+}
+
+function applyMindTransform() {
+  const stage = $("#mindStage");
+  if (!stage) return;
+  stage.style.transform = `translate(${mindView.x}px, ${mindView.y}px) scale(${mindView.scale})`;
+  $("#mindZoomLabel") && ($("#mindZoomLabel").textContent = `${Math.round(mindView.scale * 100)}%`);
+}
+
+function setMindZoom(scale, anchor = null) {
+  const next = clamp(scale, 0.45, 1.8);
+  if (anchor) {
+    const ratio = next / mindView.scale;
+    mindView.x = anchor.x - (anchor.x - mindView.x) * ratio;
+    mindView.y = anchor.y - (anchor.y - mindView.y) * ratio;
+  }
+  mindView.scale = next;
+  applyMindTransform();
+}
+
+function handleMindWheel(event) {
+  event.preventDefault();
+  const rect = event.currentTarget.getBoundingClientRect();
+  setMindZoom(mindView.scale * (event.deltaY > 0 ? 0.92 : 1.08), { x: event.clientX - rect.left, y: event.clientY - rect.top });
+}
+
+function startMindPan(event) {
+  if (event.target.closest(".pin-card, button")) return;
+  event.preventDefault();
+  const start = { x: event.clientX, y: event.clientY, viewX: mindView.x, viewY: mindView.y };
+  event.currentTarget.setPointerCapture(event.pointerId);
+  const move = (moveEvent) => {
+    mindView.x = start.viewX + moveEvent.clientX - start.x;
+    mindView.y = start.viewY + moveEvent.clientY - start.y;
+    applyMindTransform();
+  };
+  const up = () => {
+    event.currentTarget.removeEventListener("pointermove", move);
+  };
+  event.currentTarget.addEventListener("pointermove", move);
+  event.currentTarget.addEventListener("pointerup", up, { once: true });
+}
+
+function fitMindMap() {
+  mindView = { x: 0, y: 0, scale: 1 };
+  applyMindTransform();
 }
 
 function labelFor(type) {
