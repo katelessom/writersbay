@@ -1,4 +1,5 @@
 const storeKey = "writers-bay-session-v8";
+const multiStoreKey = "writers-bay-projects-v1";
 const oldKeys = ["writers-bay-session-v3", "writers-bay-session", "writers-room-session"];
 const createId = () => crypto?.randomUUID?.() || `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -35,7 +36,7 @@ function item(type, data = {}) {
 }
 
 function emptyProject() {
-  return { title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", links: [], characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [], notebook: [] };
+  return { id: createId(), title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", links: [], characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [], notebook: [] };
 }
 
 const seed = {
@@ -64,16 +65,30 @@ const seed = {
   links: []
 };
 
-let state = normalize(load());
+let appState = loadAppState();
+let state = currentProject();
 
-function load() {
+function loadLegacyProject() {
   const raw = localStorage.getItem(storeKey) || oldKeys.map((key) => localStorage.getItem(key)).find(Boolean);
   return raw ? JSON.parse(raw) : clone(seed);
+}
+
+function loadAppState() {
+  const raw = localStorage.getItem(multiStoreKey);
+  if (raw) return JSON.parse(raw);
+  const first = normalize(loadLegacyProject());
+  first.id = first.id || createId();
+  return { activeProjectId: first.id, projects: [first] };
+}
+
+function currentProject() {
+  return appState.projects.find((project) => project.id === appState.activeProjectId) || appState.projects[0];
 }
 
 function normalize(data) {
   const base = emptyProject();
   Object.assign(base, data);
+  base.id = base.id || createId();
   if (Array.isArray(data.notes) && !data.notesBoard) base.notesBoard = data.notes;
   Object.keys(base).forEach((key) => {
     if (Array.isArray(base[key])) base[key] = base[key].map((entry) => ({ ...item(key), ...entry, type: key }));
@@ -82,6 +97,7 @@ function normalize(data) {
 }
 
 function save() {
+  localStorage.setItem(multiStoreKey, JSON.stringify(appState));
   localStorage.setItem(storeKey, JSON.stringify(state));
   $("#saveState").textContent = "сохранено";
 }
@@ -93,6 +109,7 @@ function render() {
   $("#projectNotes").textContent = state.notes || "";
   $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive", "notebook"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
   renderFilters();
+  renderProjectList();
   renderBoard();
   renderCharacters();
   renderTimeline();
@@ -100,6 +117,16 @@ function render() {
   renderMindMap();
   renderNotebook();
   renderArchive();
+}
+
+function renderProjectList() {
+  $("#projectList").innerHTML = appState.projects.map((project) => `
+    <button class="project-pill ${project.id === state.id ? "active" : ""}" data-project="${project.id}">
+      <strong>${escapeHtml(project.title || "Без названия")}</strong>
+      <span>${escapeHtml(project.currentAt || "проект")}</span>
+      ${appState.projects.length > 1 ? `<span class="project-delete" data-delete-project="${project.id}">${icons.delete}</span>` : ""}
+    </button>
+  `).join("");
 }
 
 function renderFilters() {
@@ -346,6 +373,22 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 });
 
 document.body.addEventListener("click", (event) => {
+  const projectButton = event.target.closest("[data-project]");
+  const deleteProject = event.target.closest("[data-delete-project]");
+  if (deleteProject) {
+    event.stopPropagation();
+    appState.projects = appState.projects.filter((project) => project.id !== deleteProject.dataset.deleteProject);
+    appState.activeProjectId = appState.projects[0].id;
+    state = currentProject();
+    save();
+    return render();
+  }
+  if (projectButton) {
+    appState.activeProjectId = projectButton.dataset.project;
+    state = currentProject();
+    save();
+    return render();
+  }
   const filter = event.target.closest("[data-filter]");
   if (filter) {
     boardFilters.has(filter.dataset.filter) ? boardFilters.delete(filter.dataset.filter) : boardFilters.add(filter.dataset.filter);
@@ -393,9 +436,24 @@ $("#deleteCurrent").addEventListener("click", () => {
 });
 $("#editProjectBtn").addEventListener("click", openProjectEditor);
 $("#archiveEditProjectBtn").addEventListener("click", openProjectEditor);
-$("#seedBtn").addEventListener("click", () => { state = clone(seed); save(); render(); });
-$("#clearBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });
-$("#newProjectBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });
+$("#addProjectBtn").addEventListener("click", () => {
+  const project = emptyProject();
+  appState.projects.push(project);
+  appState.activeProjectId = project.id;
+  state = project;
+  save();
+  render();
+});
+$("#seedBtn").addEventListener("click", () => { replaceCurrentProject(normalize(clone(seed))); });
+$("#clearBtn").addEventListener("click", () => { replaceCurrentProject(emptyProject()); });
+$("#newProjectBtn").addEventListener("click", () => {
+  const project = emptyProject();
+  appState.projects.push(project);
+  appState.activeProjectId = project.id;
+  state = project;
+  save();
+  render();
+});
 $("#exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -408,11 +466,20 @@ $("#exportBtn").addEventListener("click", () => {
 $("#importInput").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  state = normalize(JSON.parse(await file.text()));
-  save();
-  render();
+  replaceCurrentProject(normalize(JSON.parse(await file.text())));
   event.target.value = "";
 });
+
+function replaceCurrentProject(project) {
+  const index = appState.projects.findIndex((entry) => entry.id === appState.activeProjectId);
+  project.id = index >= 0 ? appState.projects[index].id : project.id || createId();
+  if (index >= 0) appState.projects[index] = project;
+  else appState.projects.push(project);
+  appState.activeProjectId = project.id;
+  state = project;
+  save();
+  render();
+}
 
 function bindForm(selector, onSubmit) {
   const form = $(selector);

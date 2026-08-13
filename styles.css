@@ -91,6 +91,74 @@ button:hover {
   gap: 8px;
 }
 
+.project-switcher {
+  display: grid;
+  gap: 10px;
+}
+
+.switcher-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #dce5dc;
+  font-weight: 700;
+}
+
+.switcher-head .icon-tool {
+  color: white;
+  background: #274431;
+  border-color: rgba(255,255,255,.2);
+}
+
+.project-list {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.project-pill {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 36px 10px 10px;
+  text-align: left;
+  color: #e7ece9;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.project-pill.active {
+  background: var(--forest);
+  border-color: #81916e;
+}
+
+.project-pill span {
+  color: #bdc8bd;
+  font-size: 12px;
+}
+
+.project-delete {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #e1b39c;
+}
+
+.project-delete svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
 .nav-item, .ghost {
   width: 100%;
   background: transparent;
