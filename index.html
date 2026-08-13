@@ -61,6 +61,7 @@
               <button data-quick="character">Добавить персонажа</button>
               <button data-quick="event">Добавить событие</button>
               <button data-quick="clue">Добавить улику</button>
+              <button data-quick="note">Добавить заметку</button>
             </div>
             <div class="caseboard" id="caseboard"></div>
           </section>
@@ -71,8 +72,14 @@
                 <h3>Досье персонажа</h3>
                 <input name="name" placeholder="Имя" required />
                 <input name="role" placeholder="Роль в истории" />
+                <input name="color" placeholder="Цвет/маркер" />
+                <input name="height" placeholder="Рост" />
+                <input name="weight" placeholder="Вес" />
                 <textarea name="motive" placeholder="Чего хочет"></textarea>
                 <textarea name="secret" placeholder="Что скрывает"></textarea>
+                <textarea name="appearance" placeholder="Внешность"></textarea>
+                <textarea name="voice" placeholder="Голос, речь, привычки"></textarea>
+                <textarea name="arc" placeholder="Арка персонажа"></textarea>
                 <button type="submit">Добавить</button>
               </form>
               <div id="characterList" class="cards"></div>
@@ -93,6 +100,9 @@
           </section>
 
           <section id="family" class="view">
+            <div class="toolbar">
+              <button data-quick="relative">Добавить родственника</button>
+            </div>
             <div class="family-tree" id="familyTree"></div>
           </section>
 
@@ -137,10 +147,24 @@
                 </div>
               </div>
             </div>
+            <div id="archiveList" class="archive-list"></div>
           </section>
         </section>
       </main>
     </div>
+    <dialog id="editorDialog">
+      <form id="editorForm" class="editor-form" method="dialog">
+        <header>
+          <h3 id="editorTitle">Редактор</h3>
+          <button type="button" id="closeEditor" class="icon-button" aria-label="Закрыть">×</button>
+        </header>
+        <div id="editorFields" class="editor-fields"></div>
+        <footer>
+          <button type="button" id="deleteCurrent" class="danger">Удалить</button>
+          <button type="submit">Сохранить</button>
+        </footer>
+      </form>
+    </dialog>
     <script src="app.js?v=2"></script>
   </body>
 </html>

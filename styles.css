@@ -218,6 +218,7 @@ h2 {
   background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
   background-size: 14px 14px;
   overflow: hidden;
+  touch-action: none;
 }
 
 .thread {
@@ -236,6 +237,8 @@ h2 {
   background: var(--surface);
   border: 1px solid #e4d4bc;
   box-shadow: 0 12px 24px rgba(22, 12, 6, .22);
+  cursor: grab;
+  user-select: none;
 }
 
 .pin-card::before {
@@ -247,7 +250,7 @@ h2 {
   height: 12px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: var(--brass);
+  background: var(--pin, var(--brass));
   box-shadow: inset 0 0 0 3px rgba(255,255,255,.38);
 }
 
@@ -261,6 +264,23 @@ h2 {
   margin-top: 8px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.pin-card .avatar {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--pin, var(--brass));
+  float: right;
+  margin-left: 8px;
+}
+
+.edit-chip {
+  margin-top: 10px;
+  padding: 7px 9px;
+  background: #2f3d3a;
+  font-size: 12px;
 }
 
 .split {
@@ -306,6 +326,43 @@ textarea {
   position: relative;
 }
 
+.character-card .portrait {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #e7dccb, #becac5);
+  margin-bottom: 12px;
+}
+
+.character-card .portrait.empty::after {
+  content: "";
+  display: block;
+  width: 54px;
+  height: 54px;
+  margin: 38px auto 0;
+  border-radius: 50%;
+  background: #7d8b86;
+  box-shadow: 0 62px 0 22px #7d8b86;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 8px 0 14px;
+}
+
+dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+dd {
+  margin: 0;
+  font-weight: 700;
+}
+
 .card-action, .mini-delete {
   position: absolute;
   display: grid;
@@ -349,6 +406,7 @@ textarea {
 
 .timeline-item {
   position: relative;
+  cursor: grab;
 }
 
 .timeline-item::before {
@@ -359,7 +417,7 @@ textarea {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--green);
+  background: var(--pin, var(--green));
 }
 
 .family-tree, .mindmap {
@@ -369,6 +427,7 @@ textarea {
   border-radius: 8px;
   position: relative;
   overflow: hidden;
+  touch-action: none;
 }
 
 .node {
@@ -397,6 +456,73 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 22px;
+}
+
+.archive-list {
+  margin-top: 18px;
+}
+
+dialog {
+  width: min(760px, calc(100vw - 28px));
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgba(20, 14, 9, .38);
+}
+
+dialog::backdrop {
+  background: rgba(15, 20, 19, .56);
+}
+
+.editor-form {
+  padding: 20px;
+}
+
+.editor-form header,
+.editor-form footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.editor-fields label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.editor-fields textarea,
+.editor-fields label:has(textarea) {
+  grid-column: span 2;
+}
+
+.editor-preview {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: #334340;
+  font-size: 22px;
+}
+
+.danger {
+  background: var(--red);
 }
 
 .archive img {
@@ -430,5 +556,14 @@ textarea {
   .workspace-header, .split, .archive {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .editor-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-fields textarea,
+  .editor-fields label:has(textarea) {
+    grid-column: span 1;
   }
 }
