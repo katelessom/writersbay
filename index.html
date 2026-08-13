@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writers Bay</title>
-    <link rel="stylesheet" href="styles.css?v=10" />
+    <link rel="stylesheet" href="styles.css?v=11" />
   </head>
   <body>
     <div class="app">
@@ -22,6 +22,7 @@
           <button class="nav-item" data-view="timeline">Таймлайн</button>
           <button class="nav-item" data-view="family">Родословная</button>
           <button class="nav-item" data-view="mindmap">Майнд-карта</button>
+          <button class="nav-item" data-view="notebook">Заметки</button>
           <button class="nav-item" data-view="archive">Архив</button>
         </nav>
         <div class="sidebar-actions">
@@ -128,6 +129,20 @@
             </div>
           </section>
 
+          <section id="notebook" class="view">
+            <div class="split">
+              <form id="notePageForm" class="panel">
+                <h3>Страница блокнота</h3>
+                <input name="title" placeholder="Заголовок" required />
+                <input name="caption" placeholder="Подпись к картинке" />
+                <input name="image" type="file" accept="image/*" />
+                <textarea name="body" placeholder="Текст заметки"></textarea>
+                <button type="submit">Добавить</button>
+              </form>
+              <div id="notebookPages" class="notebook-pages"></div>
+            </div>
+          </section>
+
           <section id="archive" class="view">
             <div class="archive">
               <img id="projectCover" src="assets/writer-planning-kit.png" alt="Обложка проекта" />
@@ -160,6 +175,6 @@
         </footer>
       </form>
     </dialog>
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=11"></script>
   </body>
 </html>

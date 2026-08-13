@@ -297,6 +297,11 @@ h2 {
   transform-origin: left center;
   background: var(--rust);
   opacity: .88;
+  cursor: pointer;
+}
+
+.thread:hover {
+  height: 4px;
 }
 
 .pin-card {
@@ -349,14 +354,36 @@ h2 {
   font-weight: 800;
 }
 
-.pin-card .avatar {
-  width: 46px;
-  height: 46px;
+.pinned-photo,
+.album-photo {
+  margin: 8px 0 10px;
+  padding: 8px 8px 18px;
+  background: #fffdf5;
+  border: 1px solid #eadbc1;
+  box-shadow: 0 8px 18px rgba(41, 26, 14, .16);
+  transform: rotate(-1deg);
+}
+
+.pinned-photo img,
+.album-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid var(--pin, var(--brass));
-  float: right;
-  margin-left: 8px;
+}
+
+.pinned-photo figcaption,
+.album-photo figcaption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.event-photo {
+  width: 118px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .icon-row {
@@ -665,6 +692,41 @@ dd {
 
 .archive-list {
   margin-top: 18px;
+}
+
+.notebook-pages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.notebook-page {
+  position: relative;
+  min-height: 360px;
+  padding: 54px 24px 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(#fffaf0 0 30px, #e4d6bb 31px),
+    var(--surface);
+  box-shadow: 0 14px 32px rgba(38, 27, 16, .14);
+}
+
+.notebook-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 36px;
+  width: 2px;
+  background: rgba(139, 67, 38, .32);
+}
+
+.notebook-page .icon-row {
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 dialog {

@@ -6,32 +6,36 @@ const $ = (selector) => document.querySelector(selector);
 
 const icons = {
   edit: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  delete: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'
+  delete: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+  link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>',
+  unlink: '<svg viewBox="0 0 24 24"><path d="M17 7l-10 10"/><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1"/></svg>'
 };
 
 const schemas = {
   project: [["title", "Название", "text"], ["startedAt", "Дата начала", "date"], ["currentAt", "Текущий этап", "text"], ["cover", "Обложка", "file"], ["notes", "Заметки проекта", "textarea"]],
   characters: [["name", "Имя", "text"], ["role", "Роль", "text"], ["color", "Цвет", "color"], ["height", "Рост", "text"], ["weight", "Вес", "text"], ["age", "Возраст", "text"], ["image", "Фото/портрет", "file"], ["motive", "Цель", "textarea"], ["secret", "Секрет", "textarea"], ["appearance", "Внешность", "textarea"], ["voice", "Голос", "textarea"], ["arc", "Арка", "textarea"], ["relationships", "Связи", "textarea"], ["notes", "Заметки", "textarea"]],
-  events: [["date", "Дата/порядок", "text"], ["chapter", "Глава", "text"], ["characters", "Персонажи", "text"], ["image", "Картинка", "file"], ["title", "Событие", "text"], ["notes", "Итог", "textarea"]],
+  events: [["date", "Дата/порядок", "text"], ["chapter", "Глава", "text"], ["characters", "Персонажи", "text"], ["image", "Картинка", "file"], ["caption", "Подпись к картинке", "text"], ["title", "Событие", "text"], ["notes", "Итог", "textarea"]],
   clues: [["title", "Улика", "text"], ["kind", "Тип", "select"], ["notes", "Что доказывает", "textarea"]],
   notesBoard: [["title", "Заметка", "text"], ["kind", "Тип", "select"], ["notes", "Текст", "textarea"]],
   tracker: [["kind", "Тип", "select"], ["title", "Название", "text"], ["notes", "Где появилось / где раскрыть", "textarea"]],
   family: [["title", "Имя", "text"], ["relation", "Связь", "text"], ["notes", "Заметки", "textarea"]],
   mind: [["title", "Узел", "text"], ["notes", "Заметки", "textarea"]],
   archive: [["title", "Материал", "text"], ["kind", "Тип", "text"], ["notes", "Описание или ссылка", "textarea"]]
+  ,notebook: [["title", "Заголовок", "text"], ["image", "Картинка", "file"], ["caption", "Подпись к картинке", "text"], ["body", "Текст", "textarea"]]
 };
 
 const selectValues = ["Тайна", "Чеховское ружье", "Дыра в сюжете", "Версия канона", "Факт", "Подозрение", "Ложь"];
 const boardTypes = ["characters", "events", "clues", "notesBoard", "tracker"];
 let boardFilters = new Set(boardTypes);
 let editing = null;
+let pendingLink = null;
 
 function item(type, data = {}) {
   return { id: createId(), type, x: 20, y: 20, ...data };
 }
 
 function emptyProject() {
-  return { title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [] };
+  return { title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", links: [], characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [], notebook: [] };
 }
 
 const seed = {
@@ -56,6 +60,8 @@ const seed = {
   family: [item("family", { title: "Ада Вейл", relation: "мать", x: 42, y: 10 }), item("family", { title: "Мира Вейл", relation: "дочь", x: 28, y: 45 }), item("family", { title: "Северин Вейл", relation: "дядя", x: 58, y: 45 })],
   mind: [item("mind", { title: "Главная тайна", x: 42, y: 42 }), item("mind", { title: "Мотивы", x: 18, y: 20 }), item("mind", { title: "Темы", x: 68, y: 20 }), item("mind", { title: "Локации", x: 18, y: 70 })],
   archive: [item("archive", { title: "Референс особняка", kind: "ссылка", notes: "Добавить ссылку или описание источника." })]
+  ,notebook: [item("notebook", { title: "Первая заметка", body: "Здесь можно вести страницы блокнота по сценам, главам, идеям и правкам.", caption: "" })],
+  links: []
 };
 
 let state = normalize(load());
@@ -85,13 +91,14 @@ function render() {
   $("#projectCover").src = state.cover || "assets/writer-planning-kit.png";
   $("#projectMeta").textContent = [state.startedAt && `Дата начала: ${state.startedAt}`, state.currentAt && `Сейчас: ${state.currentAt}`].filter(Boolean).join(" | ") || "Настрой проект: обложка, даты, этап и заметки.";
   $("#projectNotes").textContent = state.notes || "";
-  $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
+  $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive", "notebook"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
   renderFilters();
   renderBoard();
   renderCharacters();
   renderTimeline();
   renderFamilyTree();
   renderMindMap();
+  renderNotebook();
   renderArchive();
 }
 
@@ -107,13 +114,18 @@ function renderBoard() {
   const board = $("#caseboard");
   board.innerHTML = "";
   const items = boardItems();
-  items.forEach((entry, index) => index && addThread(board, items[index - 1], entry));
+  state.links.forEach((link) => {
+    const a = items.find((entry) => entry.id === link.from);
+    const b = items.find((entry) => entry.id === link.to);
+    if (a && b) addThread(board, a, b, link.id);
+  });
   items.forEach((entry) => board.appendChild(makePin(entry)));
 }
 
 function iconButton(kind, type, id) {
-  const attr = kind === "edit" ? "data-edit" : "data-delete";
-  return `<button class="icon-tool ${kind}" ${attr}="${type}" data-id="${id}" aria-label="${kind === "edit" ? "Редактировать" : "Удалить"}">${icons[kind]}</button>`;
+  const attr = kind === "edit" ? "data-edit" : kind === "link" ? "data-link" : "data-delete";
+  const label = kind === "edit" ? "Редактировать" : kind === "link" ? "Связать" : "Удалить";
+  return `<button class="icon-tool ${kind}" ${attr}="${type}" data-id="${id}" aria-label="${label}">${icons[kind]}</button>`;
 }
 
 function makePin(entry) {
@@ -124,17 +136,19 @@ function makePin(entry) {
   card.style.left = `${entry.x}%`;
   card.style.top = `${entry.y}%`;
   card.style.setProperty("--pin", entry.color || "#8b6a18");
-  const image = entry.image ? `<img class="avatar" src="${entry.image}" alt="">` : "";
-  card.innerHTML = `<div class="icon-row">${iconButton("edit", entry.type, entry.id)}${iconButton("delete", entry.type, entry.id)}</div>${image}<small>${escapeHtml(entry.kind || entry.role || entry.chapter || entry.date || entry.relation || labelFor(entry.type))}</small><strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.secret || entry.notes || "")}</span>`;
+  const image = entry.image ? `<figure class="pinned-photo"><img src="${entry.image}" alt=""><figcaption>${escapeHtml(entry.caption || "")}</figcaption></figure>` : "";
+  card.innerHTML = `<div class="icon-row">${iconButton("link", entry.type, entry.id)}${iconButton("edit", entry.type, entry.id)}${iconButton("delete", entry.type, entry.id)}</div>${image}<small>${escapeHtml(entry.kind || entry.role || entry.chapter || entry.date || entry.relation || labelFor(entry.type))}</small><strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.secret || entry.notes || "")}</span>`;
   enableDrag(card);
   return card;
 }
 
-function addThread(root, a, b) {
+function addThread(root, a, b, linkId = "") {
   const line = document.createElement("div");
   const ax = a.x + 9, ay = a.y + 8, bx = b.x + 9, by = b.y + 8;
   const dx = bx - ax, dy = by - ay;
   line.className = "thread";
+  line.dataset.linkId = linkId;
+  if (linkId) line.title = "Двойной клик удалит связь";
   line.style.left = `${ax}%`;
   line.style.top = `${ay}%`;
   line.style.width = `${Math.hypot(dx, dy)}%`;
@@ -164,7 +178,7 @@ function renderTimeline() {
   list.innerHTML = state.events.map((event) => `
     <article class="timeline-item draggable-row" data-type="events" data-id="${event.id}">
       <div class="drag-handle" title="Перетащить">≡</div>
-      ${event.image ? `<img class="event-thumb" src="${event.image}" alt="">` : ""}
+      ${event.image ? `<figure class="album-photo event-photo"><img src="${event.image}" alt=""><figcaption>${escapeHtml(event.caption || "")}</figcaption></figure>` : ""}
       <div class="timeline-content">
         <small>${escapeHtml([event.chapter, event.date].filter(Boolean).join(" | "))}</small>
         <h3>${escapeHtml(event.title)}</h3>
@@ -205,6 +219,17 @@ function renderArchive() {
       <div class="icon-row">${iconButton("edit", "archive", entry.id)}${iconButton("delete", "archive", entry.id)}</div>
       <small>${escapeHtml(entry.kind || "материал")}</small><h3>${escapeHtml(entry.title)}</h3><p>${escapeHtml(entry.notes || "")}</p>
     </article>`).join("")}</div>`;
+}
+
+function renderNotebook() {
+  $("#notebookPages").innerHTML = state.notebook.map((page) => `
+    <article class="notebook-page" data-type="notebook" data-id="${page.id}">
+      <div class="icon-row">${iconButton("edit", "notebook", page.id)}${iconButton("delete", "notebook", page.id)}</div>
+      <h3>${escapeHtml(page.title)}</h3>
+      ${page.image ? `<figure class="album-photo"><img src="${page.image}" alt=""><figcaption>${escapeHtml(page.caption || "")}</figcaption></figure>` : ""}
+      <p>${escapeHtml(page.body || "")}</p>
+    </article>
+  `).join("");
 }
 
 function enableDrag(el) {
@@ -327,6 +352,14 @@ document.body.addEventListener("click", (event) => {
     render();
     return;
   }
+  const link = event.target.closest("[data-link]");
+  if (link) return handleLink(link.dataset.id);
+  const thread = event.target.closest(".thread[data-link-id]");
+  if (thread && event.detail >= 2) {
+    state.links = state.links.filter((entry) => entry.id !== thread.dataset.linkId);
+    save();
+    return render();
+  }
   const edit = event.target.closest("[data-edit]");
   if (edit) return openEditor(edit.dataset.edit, edit.dataset.id);
   const del = event.target.closest("[data-delete]");
@@ -337,7 +370,7 @@ document.body.addEventListener("click", (event) => {
   }
   const quick = event.target.closest("[data-quick]");
   if (quick) return addQuick(quick.dataset.quick);
-  const editable = event.target.closest(".dossier-card[data-type], .archive-card[data-type], .timeline-item[data-type]");
+  const editable = event.target.closest(".dossier-card[data-type], .archive-card[data-type], .timeline-item[data-type], .notebook-page[data-type]");
   if (editable) openEditor(editable.dataset.type, editable.dataset.id);
 });
 
@@ -345,6 +378,11 @@ $("#projectTitle").addEventListener("input", (event) => { state.title = event.ta
 bindForm("#characterForm", (data) => state.characters.push(item("characters", data)));
 bindForm("#eventForm", (data) => state.events.push(item("events", data)));
 bindForm("#mindForm", (data) => state.mind.push(item("mind", data)));
+bindAsyncForm("#notePageForm", async (data, form) => {
+  const file = form.elements.image.files[0];
+  delete data.image;
+  state.notebook.push(item("notebook", { ...data, image: file ? await fileToDataUrl(file) : "" }));
+});
 $("#editorForm").addEventListener("submit", saveEditor);
 $("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
 $("#deleteCurrent").addEventListener("click", () => {
@@ -386,6 +424,31 @@ function bindForm(selector, onSubmit) {
     save();
     render();
   });
+}
+
+function bindAsyncForm(selector, onSubmit) {
+  const form = $(selector);
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await onSubmit(Object.fromEntries(new FormData(event.target)), event.target);
+    event.target.reset();
+    save();
+    render();
+  });
+}
+
+function handleLink(id) {
+  if (!pendingLink) {
+    pendingLink = id;
+    return;
+  }
+  if (pendingLink !== id && !state.links.some((link) => (link.from === pendingLink && link.to === id) || (link.from === id && link.to === pendingLink))) {
+    state.links.push({ id: createId(), from: pendingLink, to: id });
+  }
+  pendingLink = null;
+  save();
+  render();
 }
 
 function labelFor(type) {
