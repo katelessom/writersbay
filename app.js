@@ -1,29 +1,36 @@
 const storeKey = "writers-bay-session";
+const createId = () => {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+const clone = (value) => JSON.parse(JSON.stringify(value));
 
 const seed = {
   title: "Дом на черной воде",
   characters: [
-    { id: crypto.randomUUID(), name: "Мира Вейл", role: "наследница", motive: "Вернуть дом семьи", secret: "Помнит ночь пожара иначе, чем все остальные" },
-    { id: crypto.randomUUID(), name: "Элиас Корн", role: "архивариус", motive: "Спрятать старые письма", secret: "Знал мать Миры" },
-    { id: crypto.randomUUID(), name: "Соль Рен", role: "подозреваемая", motive: "Разорвать помолвку", secret: "Была у причала до полуночи" }
+    { id: createId(), name: "Мира Вейл", role: "наследница", motive: "Вернуть дом семьи", secret: "Помнит ночь пожара иначе, чем все остальные" },
+    { id: createId(), name: "Элиас Корн", role: "архивариус", motive: "Спрятать старые письма", secret: "Знал мать Миры" },
+    { id: createId(), name: "Соль Рен", role: "подозреваемая", motive: "Разорвать помолвку", secret: "Была у причала до полуночи" }
   ],
   events: [
-    { id: crypto.randomUUID(), date: "15 лет назад", title: "Пожар в западном крыле", notes: "Исчез семейный дневник" },
-    { id: crypto.randomUUID(), date: "Глава 3", title: "Письмо без подписи", notes: "Мира получает карту подвала" },
-    { id: crypto.randomUUID(), date: "Глава 8", title: "Свидетель у воды", notes: "Элиас впервые лжет вслух" }
+    { id: createId(), date: "15 лет назад", title: "Пожар в западном крыле", notes: "Исчез семейный дневник" },
+    { id: createId(), date: "Глава 3", title: "Письмо без подписи", notes: "Мира получает карту подвала" },
+    { id: createId(), date: "Глава 8", title: "Свидетель у воды", notes: "Элиас впервые лжет вслух" }
   ],
   clues: [
-    { id: crypto.randomUUID(), title: "Ключ с солью на бородке", notes: "Нашли у старого причала" }
+    { id: createId(), title: "Ключ с солью на бородке", notes: "Нашли у старого причала" }
   ],
   mind: [
-    { id: crypto.randomUUID(), title: "Главная тайна" },
-    { id: crypto.randomUUID(), title: "Мотивы" },
-    { id: crypto.randomUUID(), title: "Локации" },
-    { id: crypto.randomUUID(), title: "Темы" }
+    { id: createId(), title: "Главная тайна" },
+    { id: createId(), title: "Мотивы" },
+    { id: createId(), title: "Локации" },
+    { id: createId(), title: "Темы" }
   ],
   tracker: [
-    { id: crypto.randomUUID(), kind: "Тайна", title: "Кто написал письмо", notes: "Подкинуть подсказку в главе 3, раскрыть после бала" },
-    { id: crypto.randomUUID(), kind: "Дыра в сюжете", title: "Почему Мира не идет в полицию", notes: "Нужна личная причина и риск для брата" }
+    { id: createId(), kind: "Тайна", title: "Кто написал письмо", notes: "Подкинуть подсказку в главе 3, раскрыть после бала" },
+    { id: createId(), kind: "Дыра в сюжете", title: "Почему Мира не идет в полицию", notes: "Нужна личная причина и риск для брата" }
   ]
 };
 
@@ -31,7 +38,7 @@ let state = normalize(load());
 
 function load() {
   const raw = localStorage.getItem(storeKey);
-  return raw ? JSON.parse(raw) : structuredClone(seed);
+  return raw ? JSON.parse(raw) : clone(seed);
 }
 
 function normalize(data) {
@@ -46,7 +53,7 @@ function normalize(data) {
 }
 
 function withId(item) {
-  return item.id ? item : { ...item, id: crypto.randomUUID() };
+  return item.id ? item : { ...item, id: createId() };
 }
 
 function save() {
@@ -193,13 +200,13 @@ document.body.addEventListener("click", (event) => {
 
 function addQuick(type) {
   if (type === "character") {
-    state.characters.push({ id: crypto.randomUUID(), name: "Новый персонаж", role: "роль", motive: "", secret: "" });
+    state.characters.push({ id: createId(), name: "Новый персонаж", role: "роль", motive: "", secret: "" });
   }
   if (type === "event") {
-    state.events.push({ id: crypto.randomUUID(), date: "Глава ?", title: "Новое событие", notes: "" });
+    state.events.push({ id: createId(), date: "Глава ?", title: "Новое событие", notes: "" });
   }
   if (type === "clue") {
-    state.clues.push({ id: crypto.randomUUID(), title: "Новая улика", notes: "Что она доказывает" });
+    state.clues.push({ id: createId(), title: "Новая улика", notes: "Что она доказывает" });
   }
   save();
   render();
@@ -211,10 +218,10 @@ document.querySelector("#projectTitle").addEventListener("input", (event) => {
   save();
 });
 
-bindForm("#characterForm", (data) => state.characters.push({ id: crypto.randomUUID(), ...data }));
-bindForm("#eventForm", (data) => state.events.push({ id: crypto.randomUUID(), ...data }));
-bindForm("#mindForm", (data) => state.mind.push({ id: crypto.randomUUID(), ...data }));
-bindForm("#trackerForm", (data) => state.tracker.push({ id: crypto.randomUUID(), ...data }));
+bindForm("#characterForm", (data) => state.characters.push({ id: createId(), ...data }));
+bindForm("#eventForm", (data) => state.events.push({ id: createId(), ...data }));
+bindForm("#mindForm", (data) => state.mind.push({ id: createId(), ...data }));
+bindForm("#trackerForm", (data) => state.tracker.push({ id: createId(), ...data }));
 
 function bindForm(selector, onSubmit) {
   document.querySelector(selector).addEventListener("submit", (event) => {
@@ -227,7 +234,7 @@ function bindForm(selector, onSubmit) {
 }
 
 document.querySelector("#seedBtn").addEventListener("click", () => {
-  state = structuredClone(seed);
+  state = clone(seed);
   save();
   render();
 });
