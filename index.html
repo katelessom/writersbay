@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writers Bay</title>
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <div class="app">
@@ -22,7 +22,6 @@
           <button class="nav-item" data-view="timeline">Таймлайн</button>
           <button class="nav-item" data-view="family">Родословная</button>
           <button class="nav-item" data-view="mindmap">Майнд-карта</button>
-          <button class="nav-item" data-view="tracker">Тайны</button>
           <button class="nav-item" data-view="archive">Архив</button>
         </nav>
         <div class="sidebar-actions">
@@ -63,6 +62,14 @@
               <button data-quick="event">Добавить событие</button>
               <button data-quick="clue">Добавить улику</button>
               <button data-quick="note">Добавить заметку</button>
+              <button data-quick="tracker">Добавить тайну</button>
+            </div>
+            <div class="filterbar" id="boardFilters">
+              <button class="filter-chip active" data-filter="characters">Персонажи</button>
+              <button class="filter-chip active" data-filter="events">События</button>
+              <button class="filter-chip active" data-filter="clues">Улики</button>
+              <button class="filter-chip active" data-filter="notesBoard">Заметки</button>
+              <button class="filter-chip active" data-filter="tracker">Тайны</button>
             </div>
             <div class="caseboard" id="caseboard"></div>
           </section>
@@ -76,6 +83,7 @@
                 <input name="color" placeholder="Цвет/маркер" />
                 <input name="height" placeholder="Рост" />
                 <input name="weight" placeholder="Вес" />
+                <input name="age" placeholder="Возраст" />
                 <textarea name="motive" placeholder="Чего хочет"></textarea>
                 <textarea name="secret" placeholder="Что скрывает"></textarea>
                 <textarea name="appearance" placeholder="Внешность"></textarea>
@@ -91,7 +99,9 @@
             <div class="split">
               <form id="eventForm" class="panel">
                 <h3>Событие</h3>
-                <input name="date" placeholder="Дата, глава или порядок" required />
+                <input name="date" placeholder="Дата или порядок" required />
+                <input name="chapter" placeholder="Глава" />
+                <input name="characters" placeholder="Персонажи в событии" />
                 <input name="title" placeholder="Название события" required />
                 <textarea name="notes" placeholder="Что меняет в сюжете"></textarea>
                 <button type="submit">Добавить</button>
@@ -115,24 +125,6 @@
                 <button type="submit">Добавить</button>
               </form>
               <div class="mindmap" id="mindmapCanvas"></div>
-            </div>
-          </section>
-
-          <section id="tracker" class="view">
-            <div class="split">
-              <form id="trackerForm" class="panel">
-                <h3>Тайна или ружье</h3>
-                <select name="kind">
-                  <option value="Тайна">Тайна</option>
-                  <option value="Чеховское ружье">Чеховское ружье</option>
-                  <option value="Дыра в сюжете">Дыра в сюжете</option>
-                  <option value="Версия канона">Версия канона</option>
-                </select>
-                <input name="title" placeholder="Короткое название" required />
-                <textarea name="notes" placeholder="Где появилось, где раскрыть, что проверить"></textarea>
-                <button type="submit">Добавить</button>
-              </form>
-              <div id="trackerList" class="freeboard"></div>
             </div>
           </section>
 
@@ -168,6 +160,6 @@
         </footer>
       </form>
     </dialog>
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=8"></script>
   </body>
 </html>

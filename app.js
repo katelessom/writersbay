@@ -1,72 +1,64 @@
-const storeKey = "writers-bay-session-v3";
-const oldKeys = ["writers-bay-session", "writers-room-session"];
+const storeKey = "writers-bay-session-v8";
+const oldKeys = ["writers-bay-session-v3", "writers-bay-session", "writers-room-session"];
 const createId = () => crypto?.randomUUID?.() || `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
+const $ = (selector) => document.querySelector(selector);
+
+const icons = {
+  edit: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  delete: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'
+};
 
 const schemas = {
-  project: [
-    ["title", "Название", "text"], ["startedAt", "Дата начала", "date"], ["currentAt", "Текущая дата/этап", "text"],
-    ["cover", "Обложка", "file"], ["notes", "Заметки проекта", "textarea"]
-  ],
-  characters: [
-    ["name", "Имя", "text"], ["role", "Роль", "text"], ["color", "Цвет/маркер", "color"],
-    ["height", "Рост", "text"], ["weight", "Вес", "text"], ["age", "Возраст", "text"],
-    ["image", "Картинка", "file"], ["motive", "Цель", "textarea"], ["secret", "Секрет", "textarea"],
-    ["appearance", "Внешность", "textarea"], ["voice", "Голос и речь", "textarea"],
-    ["arc", "Арка", "textarea"], ["relationships", "Связи", "textarea"], ["notes", "Заметки", "textarea"]
-  ],
-  events: [["date", "Дата/глава", "text"], ["title", "Событие", "text"], ["notes", "Итог", "textarea"]],
-  clues: [["title", "Улика", "text"], ["notes", "Что доказывает", "textarea"]],
-  notes: [["title", "Заметка", "text"], ["notes", "Текст", "textarea"]],
+  project: [["title", "Название", "text"], ["startedAt", "Дата начала", "date"], ["currentAt", "Текущий этап", "text"], ["cover", "Обложка", "file"], ["notes", "Заметки проекта", "textarea"]],
+  characters: [["name", "Имя", "text"], ["role", "Роль", "text"], ["color", "Цвет", "color"], ["height", "Рост", "text"], ["weight", "Вес", "text"], ["age", "Возраст", "text"], ["image", "Фото/портрет", "file"], ["motive", "Цель", "textarea"], ["secret", "Секрет", "textarea"], ["appearance", "Внешность", "textarea"], ["voice", "Голос", "textarea"], ["arc", "Арка", "textarea"], ["relationships", "Связи", "textarea"], ["notes", "Заметки", "textarea"]],
+  events: [["date", "Дата/порядок", "text"], ["chapter", "Глава", "text"], ["characters", "Персонажи", "text"], ["image", "Картинка", "file"], ["title", "Событие", "text"], ["notes", "Итог", "textarea"]],
+  clues: [["title", "Улика", "text"], ["kind", "Тип", "select"], ["notes", "Что доказывает", "textarea"]],
+  notesBoard: [["title", "Заметка", "text"], ["kind", "Тип", "select"], ["notes", "Текст", "textarea"]],
+  tracker: [["kind", "Тип", "select"], ["title", "Название", "text"], ["notes", "Где появилось / где раскрыть", "textarea"]],
   family: [["title", "Имя", "text"], ["relation", "Связь", "text"], ["notes", "Заметки", "textarea"]],
   mind: [["title", "Узел", "text"], ["notes", "Заметки", "textarea"]],
-  tracker: [["kind", "Тип", "select"], ["title", "Название", "text"], ["notes", "Где появилось / где раскрыть", "textarea"]],
   archive: [["title", "Материал", "text"], ["kind", "Тип", "text"], ["notes", "Описание или ссылка", "textarea"]]
 };
 
-const emptyProject = () => ({ title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", characters: [], events: [], clues: [], notesBoard: [], family: [], mind: [], tracker: [], archive: [] });
-const seed = {
-  title: "Дом на черной воде",
-  startedAt: "2026-08-13",
-  currentAt: "Черновик",
-  notes: "Готический детектив о памяти, наследстве и доме, который хранит чужие версии правды.",
-  cover: "",
-  characters: [
-    item("characters", { name: "Мира Вейл", role: "наследница", color: "#8e3036", height: "172 см", weight: "62 кг", age: "27", motive: "Вернуть дом семьи", secret: "Помнит ночь пожара иначе, чем все остальные", appearance: "Темные волосы, узкие перчатки, шрам у виска.", voice: "Говорит коротко, когда боится.", arc: "От бегства от прошлого к праву назвать правду.", x: 8, y: 12 }),
-    item("characters", { name: "Элиас Корн", role: "архивариус", color: "#31586a", age: "54", motive: "Спрятать старые письма", secret: "Знал мать Миры", x: 36, y: 42 }),
-    item("characters", { name: "Соль Рен", role: "подозреваемая", color: "#53695a", age: "31", motive: "Разорвать помолвку", secret: "Была у причала до полуночи", x: 64, y: 18 })
-  ],
-  events: [
-    item("events", { date: "15 лет назад", title: "Пожар в западном крыле", notes: "Исчез семейный дневник", x: 12, y: 70 }),
-    item("events", { date: "Глава 3", title: "Письмо без подписи", notes: "Мира получает карту подвала", x: 42, y: 66 }),
-    item("events", { date: "Глава 8", title: "Свидетель у воды", notes: "Элиас впервые лжет вслух", x: 70, y: 70 })
-  ],
-  clues: [item("clues", { title: "Ключ с солью на бородке", notes: "Нашли у старого причала", x: 76, y: 42 })],
-  notesBoard: [item("notesBoard", { title: "Правило канона", notes: "Все факты помечать как канон, версия или вопрос.", x: 48, y: 16 })],
-  family: [
-    item("family", { title: "Ада Вейл", relation: "мать Миры", x: 24, y: 18 }),
-    item("family", { title: "Мира Вейл", relation: "дочь", x: 24, y: 50 }),
-    item("family", { title: "Северин Вейл", relation: "дядя", x: 58, y: 35 })
-  ],
-  mind: [
-    item("mind", { title: "Главная тайна", notes: "Кто устроил пожар", x: 42, y: 42 }),
-    item("mind", { title: "Мотивы", x: 18, y: 18 }),
-    item("mind", { title: "Темы", x: 68, y: 18 }),
-    item("mind", { title: "Локации", x: 18, y: 70 })
-  ],
-  tracker: [
-    item("tracker", { kind: "Тайна", title: "Кто написал письмо", notes: "Подкинуть подсказку в главе 3, раскрыть после бала", x: 8, y: 12 }),
-    item("tracker", { kind: "Дыра в сюжете", title: "Почему Мира не идет в полицию", notes: "Нужна личная причина и риск для брата", x: 42, y: 18 })
-  ],
-  archive: [item("archive", { title: "Референс особняка", kind: "ссылка", notes: "Добавить ссылку или описание источника." })]
-};
-
-let state = normalize(load());
+const selectValues = ["Тайна", "Чеховское ружье", "Дыра в сюжете", "Версия канона", "Факт", "Подозрение", "Ложь"];
+const boardTypes = ["characters", "events", "clues", "notesBoard", "tracker"];
+let boardFilters = new Set(boardTypes);
 let editing = null;
 
 function item(type, data = {}) {
   return { id: createId(), type, x: 20, y: 20, ...data };
 }
+
+function emptyProject() {
+  return { title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", characters: [], events: [], clues: [], notesBoard: [], tracker: [], family: [], mind: [], archive: [] };
+}
+
+const seed = {
+  ...emptyProject(),
+  title: "Дом на черной воде",
+  startedAt: "2026-08-13",
+  currentAt: "Черновик",
+  notes: "Готический детектив о памяти, наследстве и доме, который хранит чужие версии правды.",
+  characters: [
+    item("characters", { name: "Мира Вейл", role: "наследница", color: "#173a24", height: "172 см", weight: "62 кг", age: "27", motive: "Вернуть дом семьи", secret: "Помнит ночь пожара иначе, чем все остальные", x: 8, y: 12 }),
+    item("characters", { name: "Элиас Корн", role: "архивариус", color: "#243439", age: "54", motive: "Спрятать старые письма", secret: "Знал мать Миры", x: 36, y: 42 }),
+    item("characters", { name: "Соль Рен", role: "подозреваемая", color: "#3c1d28", age: "31", motive: "Разорвать помолвку", secret: "Была у причала до полуночи", x: 64, y: 18 })
+  ],
+  events: [
+    item("events", { date: "15 лет назад", chapter: "Пролог", title: "Пожар в западном крыле", notes: "Исчез семейный дневник", characters: "Мира, Ада", x: 12, y: 70 }),
+    item("events", { date: "Глава 3", chapter: "Глава 3", title: "Письмо без подписи", notes: "Мира получает карту подвала", characters: "Мира", x: 42, y: 66 }),
+    item("events", { date: "Глава 8", chapter: "Глава 8", title: "Свидетель у воды", notes: "Элиас впервые лжет вслух", characters: "Элиас, Соль", x: 70, y: 70 })
+  ],
+  clues: [item("clues", { kind: "Факт", title: "Ключ с солью на бородке", notes: "Нашли у старого причала", x: 76, y: 42 })],
+  notesBoard: [item("notesBoard", { kind: "Версия канона", title: "Правило канона", notes: "Все факты помечать как канон, версия или вопрос.", x: 48, y: 16 })],
+  tracker: [item("tracker", { kind: "Тайна", title: "Кто написал письмо", notes: "Подсказка в главе 3, раскрыть после бала", x: 24, y: 28 })],
+  family: [item("family", { title: "Ада Вейл", relation: "мать", x: 42, y: 10 }), item("family", { title: "Мира Вейл", relation: "дочь", x: 28, y: 45 }), item("family", { title: "Северин Вейл", relation: "дядя", x: 58, y: 45 })],
+  mind: [item("mind", { title: "Главная тайна", x: 42, y: 42 }), item("mind", { title: "Мотивы", x: 18, y: 20 }), item("mind", { title: "Темы", x: 68, y: 20 }), item("mind", { title: "Локации", x: 18, y: 70 })],
+  archive: [item("archive", { title: "Референс особняка", kind: "ссылка", notes: "Добавить ссылку или описание источника." })]
+};
+
+let state = normalize(load());
 
 function load() {
   const raw = localStorage.getItem(storeKey) || oldKeys.map((key) => localStorage.getItem(key)).find(Boolean);
@@ -76,10 +68,7 @@ function load() {
 function normalize(data) {
   const base = emptyProject();
   Object.assign(base, data);
-  if (data.notesBoard === undefined && Array.isArray(data.notes)) {
-    base.notesBoard = data.notes;
-    base.notes = typeof data.projectNotes === "string" ? data.projectNotes : "";
-  }
+  if (Array.isArray(data.notes) && !data.notesBoard) base.notesBoard = data.notes;
   Object.keys(base).forEach((key) => {
     if (Array.isArray(base[key])) base[key] = base[key].map((entry) => ({ ...item(key), ...entry, type: key }));
   });
@@ -94,33 +83,37 @@ function save() {
 function render() {
   $("#projectTitle").textContent = state.title;
   $("#projectCover").src = state.cover || "assets/writer-planning-kit.png";
-  $("#projectMeta").textContent = [state.startedAt && `Дата начала: ${state.startedAt}`, state.currentAt && `Сейчас: ${state.currentAt}`].filter(Boolean).join(" | ") || "Проект можно снабдить обложкой, датой начала, текущим этапом и заметками.";
+  $("#projectMeta").textContent = [state.startedAt && `Дата начала: ${state.startedAt}`, state.currentAt && `Сейчас: ${state.currentAt}`].filter(Boolean).join(" | ") || "Настрой проект: обложка, даты, этап и заметки.";
   $("#projectNotes").textContent = state.notes || "";
-  $("#itemCount").textContent = `${collections().reduce((sum, key) => sum + state[key].length, 0)} объектов`;
+  $("#itemCount").textContent = `${["characters", "events", "clues", "notesBoard", "tracker", "family", "mind", "archive"].reduce((sum, key) => sum + state[key].length, 0)} объектов`;
+  renderFilters();
   renderBoard();
   renderCharacters();
   renderTimeline();
-  renderFreeCanvas("#familyTree", "family");
-  renderFreeCanvas("#mindmapCanvas", "mind");
-  renderTracker();
+  renderFamilyTree();
+  renderMindMap();
   renderArchive();
 }
 
-function collections() {
-  return ["characters", "events", "clues", "notesBoard", "family", "mind", "tracker", "archive"];
+function renderFilters() {
+  document.querySelectorAll(".filter-chip").forEach((button) => button.classList.toggle("active", boardFilters.has(button.dataset.filter)));
 }
 
 function boardItems() {
-  return [...state.characters, ...state.events, ...state.clues, ...state.notesBoard];
+  return [...state.characters, ...state.events, ...state.clues, ...state.notesBoard, ...state.tracker].filter((entry) => boardFilters.has(entry.type));
 }
 
 function renderBoard() {
   const board = $("#caseboard");
   board.innerHTML = "";
-  boardItems().forEach((entry, index, list) => {
-    if (index > 0) addThread(board, list[index - 1], entry);
-  });
-  boardItems().forEach((entry) => board.appendChild(makePin(entry)));
+  const items = boardItems();
+  items.forEach((entry, index) => index && addThread(board, items[index - 1], entry));
+  items.forEach((entry) => board.appendChild(makePin(entry)));
+}
+
+function iconButton(kind, type, id) {
+  const attr = kind === "edit" ? "data-edit" : "data-delete";
+  return `<button class="icon-tool ${kind}" ${attr}="${type}" data-id="${id}" aria-label="${kind === "edit" ? "Редактировать" : "Удалить"}">${icons[kind]}</button>`;
 }
 
 function makePin(entry) {
@@ -130,12 +123,9 @@ function makePin(entry) {
   card.dataset.type = entry.type;
   card.style.left = `${entry.x}%`;
   card.style.top = `${entry.y}%`;
-  card.style.setProperty("--pin", entry.color || "#a6782c");
+  card.style.setProperty("--pin", entry.color || "#8b6a18");
   const image = entry.image ? `<img class="avatar" src="${entry.image}" alt="">` : "";
-  card.innerHTML = `${image}<strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.role || entry.date || entry.relation || entry.kind || entry.type)}</span><span>${escapeHtml(entry.secret || entry.notes || "")}</span><div class="card-controls"><button class="edit-chip" data-edit="${entry.type}" data-id="${entry.id}">Редактировать</button><button class="delete-chip" data-delete="${entry.type}" data-id="${entry.id}">Удалить</button></div>`;
-  card.addEventListener("dblclick", (event) => {
-    if (!event.target.closest("button")) openEditor(entry.type, entry.id);
-  });
+  card.innerHTML = `<div class="icon-row">${iconButton("edit", entry.type, entry.id)}${iconButton("delete", entry.type, entry.id)}</div>${image}<small>${escapeHtml(entry.kind || entry.role || entry.chapter || entry.date || entry.relation || labelFor(entry.type))}</small><strong>${escapeHtml(entry.name || entry.title)}</strong><span>${escapeHtml(entry.secret || entry.notes || "")}</span>`;
   enableDrag(card);
   return card;
 }
@@ -154,20 +144,16 @@ function addThread(root, a, b) {
 
 function renderCharacters() {
   $("#characterList").innerHTML = state.characters.map((char) => `
-    <article class="card character-card">
-      ${char.image ? `<img class="portrait" src="${char.image}" alt="">` : `<div class="portrait empty"></div>`}
-      <small style="color:${char.color || "#8e3036"}">${escapeHtml(char.role || "персонаж")}</small>
-      <h3>${escapeHtml(char.name)}</h3>
-      <dl>
-        <dt>Рост</dt><dd>${escapeHtml(char.height || "-")}</dd>
-        <dt>Вес</dt><dd>${escapeHtml(char.weight || "-")}</dd>
-        <dt>Возраст</dt><dd>${escapeHtml(char.age || "-")}</dd>
-      </dl>
-      <p><strong>Цель:</strong> ${escapeHtml(char.motive || "не задано")}</p>
-      <p><strong>Секрет:</strong> ${escapeHtml(char.secret || "не задано")}</p>
-      <div class="card-controls">
-        <button data-edit="characters" data-id="${char.id}">Редактировать</button>
-        <button class="danger soft" data-delete="characters" data-id="${char.id}">Удалить</button>
+    <article class="dossier-card" data-type="characters" data-id="${char.id}" style="--pin:${char.color || "#173a24"}">
+      <div class="dossier-strip">POLICE DOSSIER</div>
+      <div class="icon-row">${iconButton("edit", "characters", char.id)}${iconButton("delete", "characters", char.id)}</div>
+      ${char.image ? `<img class="mugshot" src="${char.image}" alt="">` : `<div class="mugshot empty"></div>`}
+      <div class="dossier-body">
+        <small>${escapeHtml(char.role || "персонаж")}</small>
+        <h3>${escapeHtml(char.name)}</h3>
+        <dl><dt>Рост</dt><dd>${escapeHtml(char.height || "-")}</dd><dt>Вес</dt><dd>${escapeHtml(char.weight || "-")}</dd><dt>Возраст</dt><dd>${escapeHtml(char.age || "-")}</dd></dl>
+        <p><strong>Цель:</strong> ${escapeHtml(char.motive || "-")}</p>
+        <p><strong>Секрет:</strong> ${escapeHtml(char.secret || "-")}</p>
       </div>
     </article>
   `).join("");
@@ -176,50 +162,49 @@ function renderCharacters() {
 function renderTimeline() {
   const list = $("#timelineList");
   list.innerHTML = state.events.map((event) => `
-    <article class="timeline-item draggable-row" data-type="events" data-id="${event.id}" style="--pin:${event.color || "#53695a"}">
-      <small>${escapeHtml(event.date)}</small>
-      <h3>${escapeHtml(event.title)}</h3>
-      <p>${escapeHtml(event.notes || "")}</p>
-      <div class="card-controls">
-        <button data-edit="events" data-id="${event.id}">Редактировать</button>
-        <button class="danger soft" data-delete="events" data-id="${event.id}">Удалить</button>
+    <article class="timeline-item draggable-row" data-type="events" data-id="${event.id}">
+      <div class="drag-handle" title="Перетащить">≡</div>
+      ${event.image ? `<img class="event-thumb" src="${event.image}" alt="">` : ""}
+      <div class="timeline-content">
+        <small>${escapeHtml([event.chapter, event.date].filter(Boolean).join(" | "))}</small>
+        <h3>${escapeHtml(event.title)}</h3>
+        <p>${escapeHtml(event.notes || "")}</p>
+        ${event.characters ? `<p class="linked-people">${escapeHtml(event.characters)}</p>` : ""}
       </div>
+      <div class="icon-row">${iconButton("edit", "events", event.id)}${iconButton("delete", "events", event.id)}</div>
     </article>
   `).join("");
   list.querySelectorAll(".draggable-row").forEach(enableRowDrag);
 }
 
-function renderFreeCanvas(selector, type) {
-  const root = $(selector);
-  root.innerHTML = "";
-  state[type].forEach((entry, index, list) => {
-    if (index > 0) addThread(root, list[index - 1], entry);
+function renderFamilyTree() {
+  const root = $("#familyTree");
+  root.innerHTML = `<div class="family-trunk"></div>`;
+  state.family.forEach((entry) => {
+    const card = makePin(entry);
+    card.classList.add("family-node");
+    root.appendChild(card);
   });
-  state[type].forEach((entry) => root.appendChild(makePin(entry)));
 }
 
-function renderTracker() {
-  const root = $("#trackerList");
+function renderMindMap() {
+  const root = $("#mindmapCanvas");
   root.innerHTML = "";
-  state.tracker.forEach((entry, index, list) => {
-    if (index > 0) addThread(root, list[index - 1], entry);
+  const center = state.mind[0];
+  state.mind.forEach((entry, index) => index && center && addThread(root, center, entry));
+  state.mind.forEach((entry, index) => {
+    const card = makePin(entry);
+    card.classList.add(index === 0 ? "mind-center" : "mind-branch");
+    root.appendChild(card);
   });
-  state.tracker.forEach((entry) => root.appendChild(makePin(entry)));
 }
 
 function renderArchive() {
-  $("#archiveList").innerHTML = `
-    <div class="toolbar"><button data-quick="archive">Добавить материал</button></div>
-    <div class="cards">${state.archive.map((entry) => `
-      <article class="card">
-        <small>${escapeHtml(entry.kind || "материал")}</small>
-        <h3>${escapeHtml(entry.title)}</h3>
-        <p>${escapeHtml(entry.notes || "")}</p>
-        <div class="card-controls">
-          <button data-edit="archive" data-id="${entry.id}">Редактировать</button>
-          <button class="danger soft" data-delete="archive" data-id="${entry.id}">Удалить</button>
-        </div>
-      </article>`).join("")}</div>`;
+  $("#archiveList").innerHTML = `<div class="toolbar"><button data-quick="archive">Добавить материал</button></div><div class="cards">${state.archive.map((entry) => `
+    <article class="archive-card card" data-type="archive" data-id="${entry.id}">
+      <div class="icon-row">${iconButton("edit", "archive", entry.id)}${iconButton("delete", "archive", entry.id)}</div>
+      <small>${escapeHtml(entry.kind || "материал")}</small><h3>${escapeHtml(entry.title)}</h3><p>${escapeHtml(entry.notes || "")}</p>
+    </article>`).join("")}</div>`;
 }
 
 function enableDrag(el) {
@@ -227,30 +212,21 @@ function enableDrag(el) {
     if (event.target.closest("button")) return;
     event.preventDefault();
     const parent = el.parentElement.getBoundingClientRect();
-    const startX = event.clientX;
-    const startY = event.clientY;
     let moved = false;
+    const startX = event.clientX, startY = event.clientY;
     el.setPointerCapture(event.pointerId);
     const move = (moveEvent) => {
-      if (Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4) {
-        moved = true;
-      }
-      const x = ((moveEvent.clientX - parent.left) / parent.width) * 100;
-      const y = ((moveEvent.clientY - parent.top) / parent.height) * 100;
+      moved = moved || Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4;
       const entry = findEntry(el.dataset.type, el.dataset.id);
-      entry.x = clamp(x, 1, 82);
-      entry.y = clamp(y, 1, 82);
+      entry.x = clamp(((moveEvent.clientX - parent.left) / parent.width) * 100, 1, 84);
+      entry.y = clamp(((moveEvent.clientY - parent.top) / parent.height) * 100, 1, 84);
       el.style.left = `${entry.x}%`;
       el.style.top = `${entry.y}%`;
     };
     const up = () => {
       el.removeEventListener("pointermove", move);
       save();
-      if (moved) {
-        render();
-      } else {
-        openEditor(el.dataset.type, el.dataset.id);
-      }
+      moved ? render() : openEditor(el.dataset.type, el.dataset.id);
     };
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up, { once: true });
@@ -262,10 +238,8 @@ function enableRowDrag(el) {
   el.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", el.dataset.id));
   el.addEventListener("dragover", (event) => event.preventDefault());
   el.addEventListener("drop", (event) => {
-    const fromId = event.dataTransfer.getData("text/plain");
-    const toId = el.dataset.id;
-    const from = state.events.findIndex((entry) => entry.id === fromId);
-    const to = state.events.findIndex((entry) => entry.id === toId);
+    const from = state.events.findIndex((entry) => entry.id === event.dataTransfer.getData("text/plain"));
+    const to = state.events.findIndex((entry) => entry.id === el.dataset.id);
     if (from < 0 || to < 0 || from === to) return;
     const [moved] = state.events.splice(from, 1);
     state.events.splice(to, 0, moved);
@@ -279,6 +253,7 @@ function openEditor(type, id) {
   const entry = findEntry(type, id);
   $("#editorTitle").textContent = `Редактор: ${entry.name || entry.title}`;
   $("#editorFields").innerHTML = schemas[type].map(([key, label, fieldType]) => field(entry, key, label, fieldType)).join("");
+  $("#deleteCurrent").style.display = "";
   $("#editorDialog").showModal();
 }
 
@@ -293,8 +268,9 @@ function openProjectEditor() {
 function field(entry, key, label, fieldType) {
   if (fieldType === "textarea") return `<label>${label}<textarea name="${key}">${escapeHtml(entry[key] || "")}</textarea></label>`;
   if (fieldType === "file") return `<label>${label}<input name="${key}" type="file" accept="image/*">${entry[key] ? `<img class="editor-preview" src="${entry[key]}" alt="">` : ""}</label>`;
-  if (fieldType === "select") return `<label>${label}<select name="${key}">${["Тайна", "Чеховское ружье", "Дыра в сюжете", "Версия канона"].map((value) => `<option ${entry[key] === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>`;
-  return `<label>${label}<input name="${key}" type="${fieldType}" value="${escapeHtml(entry[key] || fieldType === "color" ? entry[key] || "#a6782c" : "")}"></label>`;
+  if (fieldType === "select") return `<label>${label}<select name="${key}">${selectValues.map((value) => `<option ${entry[key] === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>`;
+  const value = fieldType === "color" ? entry[key] || "#173a24" : entry[key] || "";
+  return `<label>${label}<input name="${key}" type="${fieldType}" value="${escapeHtml(value)}"></label>`;
 }
 
 async function saveEditor(event) {
@@ -309,7 +285,6 @@ async function saveEditor(event) {
     }
   }
   $("#editorDialog").close();
-  $("#deleteCurrent").style.display = "";
   save();
   render();
 }
@@ -322,16 +297,13 @@ function fileToDataUrl(file) {
   });
 }
 
-function findEntry(type, id) {
-  return state[type].find((entry) => entry.id === id);
-}
-
 function addQuick(type) {
   const factories = {
-    character: () => state.characters.push(item("characters", { name: "Новый персонаж", role: "роль", color: "#a6782c" })),
-    event: () => state.events.push(item("events", { date: "Глава ?", title: "Новое событие" })),
-    clue: () => state.clues.push(item("clues", { title: "Новая улика", notes: "Что она доказывает" })),
-    note: () => state.notesBoard.push(item("notesBoard", { title: "Новая заметка", notes: "" })),
+    character: () => state.characters.push(item("characters", { name: "Новый персонаж", role: "роль", color: "#173a24" })),
+    event: () => state.events.push(item("events", { date: "Сцена ?", chapter: "Глава ?", title: "Новое событие" })),
+    clue: () => state.clues.push(item("clues", { kind: "Факт", title: "Новая улика", notes: "Что она доказывает" })),
+    note: () => state.notesBoard.push(item("notesBoard", { kind: "Версия канона", title: "Новая заметка", notes: "" })),
+    tracker: () => state.tracker.push(item("tracker", { kind: "Тайна", title: "Новая тайна", notes: "" })),
     relative: () => state.family.push(item("family", { title: "Новый родственник", relation: "связь" })),
     archive: () => state.archive.push(item("archive", { title: "Новый материал", kind: "референс" }))
   };
@@ -349,49 +321,40 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 });
 
 document.body.addEventListener("click", (event) => {
-  const editableCard = event.target.closest(".card[data-type], .pin-card[data-type], .timeline-item[data-type]");
-  if (editableCard && !editableCard.classList.contains("pin-card") && !event.target.closest("button, input, textarea, select")) {
-    openEditor(editableCard.dataset.type, editableCard.dataset.id);
+  const filter = event.target.closest("[data-filter]");
+  if (filter) {
+    boardFilters.has(filter.dataset.filter) ? boardFilters.delete(filter.dataset.filter) : boardFilters.add(filter.dataset.filter);
+    render();
     return;
   }
   const edit = event.target.closest("[data-edit]");
-  if (edit) openEditor(edit.dataset.edit, edit.dataset.id);
+  if (edit) return openEditor(edit.dataset.edit, edit.dataset.id);
   const del = event.target.closest("[data-delete]");
   if (del) {
     state[del.dataset.delete] = state[del.dataset.delete].filter((entry) => entry.id !== del.dataset.id);
     save();
-    render();
+    return render();
   }
   const quick = event.target.closest("[data-quick]");
-  if (quick) addQuick(quick.dataset.quick);
+  if (quick) return addQuick(quick.dataset.quick);
+  const editable = event.target.closest(".dossier-card[data-type], .archive-card[data-type], .timeline-item[data-type]");
+  if (editable) openEditor(editable.dataset.type, editable.dataset.id);
 });
 
-$("#projectTitle").addEventListener("input", (event) => {
-  state.title = event.target.textContent.trim() || "Без названия";
-  save();
-});
-
+$("#projectTitle").addEventListener("input", (event) => { state.title = event.target.textContent.trim() || "Без названия"; save(); });
 bindForm("#characterForm", (data) => state.characters.push(item("characters", data)));
 bindForm("#eventForm", (data) => state.events.push(item("events", data)));
 bindForm("#mindForm", (data) => state.mind.push(item("mind", data)));
-bindForm("#trackerForm", (data) => state.tracker.push(item("tracker", data)));
 $("#editorForm").addEventListener("submit", saveEditor);
-$("#closeEditor").addEventListener("click", () => {
-  $("#deleteCurrent").style.display = "";
-  $("#editorDialog").close();
-});
+$("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
 $("#deleteCurrent").addEventListener("click", () => {
-  if (editing.type === "project") {
-    $("#editorDialog").close();
-    return;
-  }
-  state[editing.type] = state[editing.type].filter((entry) => entry.id !== editing.id);
+  if (editing.type !== "project") state[editing.type] = state[editing.type].filter((entry) => entry.id !== editing.id);
   $("#editorDialog").close();
   save();
   render();
 });
-$("#editProjectBtn").addEventListener("click", () => openProjectEditor());
-$("#archiveEditProjectBtn").addEventListener("click", () => openProjectEditor());
+$("#editProjectBtn").addEventListener("click", openProjectEditor);
+$("#archiveEditProjectBtn").addEventListener("click", openProjectEditor);
 $("#seedBtn").addEventListener("click", () => { state = clone(seed); save(); render(); });
 $("#clearBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });
 $("#newProjectBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });
@@ -414,7 +377,9 @@ $("#importInput").addEventListener("change", async (event) => {
 });
 
 function bindForm(selector, onSubmit) {
-  $(selector).addEventListener("submit", (event) => {
+  const form = $(selector);
+  if (!form) return;
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
     onSubmit(Object.fromEntries(new FormData(event.target)));
     event.target.reset();
@@ -423,21 +388,20 @@ function bindForm(selector, onSubmit) {
   });
 }
 
+function labelFor(type) {
+  return ({ characters: "персонаж", events: "событие", clues: "улика", notesBoard: "заметка", tracker: "тайна", family: "родословная", mind: "узел", archive: "архив" })[type] || type;
+}
+
+function findEntry(type, id) {
+  return state[type].find((entry) => entry.id === id);
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function $(selector) {
-  return document.querySelector(selector);
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
 save();
