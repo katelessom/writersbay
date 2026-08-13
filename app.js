@@ -218,8 +218,8 @@ function enableDrag(el) {
     const move = (moveEvent) => {
       moved = moved || Math.abs(moveEvent.clientX - startX) > 4 || Math.abs(moveEvent.clientY - startY) > 4;
       const entry = findEntry(el.dataset.type, el.dataset.id);
-      entry.x = clamp(((moveEvent.clientX - parent.left) / parent.width) * 100, 1, 84);
-      entry.y = clamp(((moveEvent.clientY - parent.top) / parent.height) * 100, 1, 84);
+      entry.x = clamp(((moveEvent.clientX - parent.left) / parent.width) * 100, 1, 92);
+      entry.y = clamp(((moveEvent.clientY - parent.top) / parent.height) * 100, 1, 90);
       el.style.left = `${entry.x}%`;
       el.style.top = `${entry.y}%`;
     };

@@ -246,13 +246,41 @@ h2 {
 
 .caseboard {
   position: relative;
-  min-height: 560px;
+  width: 2400px;
+  height: 1400px;
+  min-height: 900px;
   border: 1px solid var(--line);
   background: #39513c;
   background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
   background-size: 14px 14px;
-  overflow: hidden;
   touch-action: none;
+}
+
+#board,
+#family,
+#mindmap {
+  overflow: auto;
+  max-height: calc(100vh - 180px);
+  border: 1px solid var(--line);
+  background: rgba(255, 249, 237, .42);
+}
+
+#board .toolbar,
+#board .filterbar,
+#family .toolbar {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  padding: 10px;
+  background: var(--cream);
+}
+
+#board .toolbar {
+  top: 0;
+}
+
+#board .filterbar {
+  top: 58px;
 }
 
 .thread {
@@ -554,12 +582,13 @@ dd {
 }
 
 .family-tree, .mindmap, .freeboard {
-  min-height: 520px;
+  width: 2200px;
+  height: 1300px;
+  min-height: 900px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   position: relative;
-  overflow: hidden;
   touch-action: none;
 }
 
