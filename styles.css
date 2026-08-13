@@ -20,7 +20,7 @@ body {
   background: #efe8dc;
 }
 
-button, input, textarea {
+button, input, textarea, select {
   font: inherit;
 }
 
@@ -31,6 +31,10 @@ button {
   color: white;
   padding: 10px 14px;
   cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
 }
 
 .app {
@@ -187,6 +191,17 @@ h2 {
   font-size: 14px;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.toolbar .danger {
+  background: var(--red);
+}
+
 .view {
   display: none;
 }
@@ -266,7 +281,7 @@ form {
   gap: 10px;
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -288,6 +303,36 @@ textarea {
 
 .card {
   min-height: 180px;
+  position: relative;
+}
+
+.card-action, .mini-delete {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #dec9ad;
+  background: #fff7ea;
+  color: var(--red);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.card-action {
+  top: 10px;
+  right: 10px;
+}
+
+.mini-delete {
+  position: static;
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  font-size: 15px;
+  vertical-align: middle;
 }
 
 .card small {
@@ -337,6 +382,10 @@ textarea {
 
 .mind-node {
   border-color: #93a49b;
+}
+
+.tracker-card small {
+  color: var(--blue);
 }
 
 .archive {

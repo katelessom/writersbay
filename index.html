@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Writer's Room</title>
+    <title>Writers Bay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
-          <span class="brand-mark">WR</span>
+          <span class="brand-mark">WB</span>
           <div>
-            <strong>Writer's Room</strong>
+            <strong>Writers Bay</strong>
             <span>штаб истории</span>
           </div>
         </div>
@@ -22,12 +22,13 @@
           <button class="nav-item" data-view="timeline">Таймлайн</button>
           <button class="nav-item" data-view="family">Родословная</button>
           <button class="nav-item" data-view="mindmap">Майнд-карта</button>
+          <button class="nav-item" data-view="tracker">Тайны</button>
           <button class="nav-item" data-view="archive">Архив</button>
         </nav>
         <div class="sidebar-actions">
-          <button id="exportBtn" class="ghost">Экспорт</button>
+          <button id="exportBtn" class="ghost">Скачать бэкап</button>
           <label class="ghost file-label">
-            Импорт
+            Загрузить бэкап
             <input id="importInput" type="file" accept="application/json" />
           </label>
         </div>
@@ -56,6 +57,11 @@
           </header>
 
           <section id="board" class="view active">
+            <div class="toolbar">
+              <button data-quick="character">Добавить персонажа</button>
+              <button data-quick="event">Добавить событие</button>
+              <button data-quick="clue">Добавить улику</button>
+            </div>
             <div class="caseboard" id="caseboard"></div>
           </section>
 
@@ -77,7 +83,7 @@
             <div class="split">
               <form id="eventForm" class="panel">
                 <h3>Событие</h3>
-                <input name="date" placeholder="Дата или порядок" required />
+                <input name="date" placeholder="Дата, глава или порядок" required />
                 <input name="title" placeholder="Название события" required />
                 <textarea name="notes" placeholder="Что меняет в сюжете"></textarea>
                 <button type="submit">Добавить</button>
@@ -91,7 +97,32 @@
           </section>
 
           <section id="mindmap" class="view">
-            <div class="mindmap" id="mindmapCanvas"></div>
+            <div class="split">
+              <form id="mindForm" class="panel">
+                <h3>Узел карты</h3>
+                <input name="title" placeholder="Идея, тема или вопрос" required />
+                <button type="submit">Добавить</button>
+              </form>
+              <div class="mindmap" id="mindmapCanvas"></div>
+            </div>
+          </section>
+
+          <section id="tracker" class="view">
+            <div class="split">
+              <form id="trackerForm" class="panel">
+                <h3>Тайна или ружье</h3>
+                <select name="kind">
+                  <option value="Тайна">Тайна</option>
+                  <option value="Чеховское ружье">Чеховское ружье</option>
+                  <option value="Дыра в сюжете">Дыра в сюжете</option>
+                  <option value="Версия канона">Версия канона</option>
+                </select>
+                <input name="title" placeholder="Короткое название" required />
+                <textarea name="notes" placeholder="Где появилось, где раскрыть, что проверить"></textarea>
+                <button type="submit">Добавить</button>
+              </form>
+              <div id="trackerList" class="cards"></div>
+            </div>
           </section>
 
           <section id="archive" class="view">
@@ -99,8 +130,11 @@
               <img src="assets/writer-planning-kit.png" alt="Материалы для планирования истории" />
               <div>
                 <h3>Архив проекта</h3>
-                <p>Здесь будут жить референсы, заметки, чеховские ружья, список тайн и версии канона. В первой версии экспорт уже сохраняет персонажей, события, связи и название проекта.</p>
-                <button id="seedBtn">Заполнить примером</button>
+                <p>Бэкап сохраняет название проекта, персонажей, события, улики, тайны, майнд-карту и заметки. Данные остаются в браузере и в скачанном JSON-файле.</p>
+                <div class="toolbar">
+                  <button id="seedBtn">Заполнить примером</button>
+                  <button id="clearBtn" class="danger">Очистить проект</button>
+                </div>
               </div>
             </div>
           </section>
