@@ -4,6 +4,10 @@ const createId = () => crypto?.randomUUID?.() || `id-${Date.now()}-${Math.random
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 const schemas = {
+  project: [
+    ["title", "Название", "text"], ["startedAt", "Дата начала", "date"], ["currentAt", "Текущая дата/этап", "text"],
+    ["cover", "Обложка", "file"], ["notes", "Заметки проекта", "textarea"]
+  ],
   characters: [
     ["name", "Имя", "text"], ["role", "Роль", "text"], ["color", "Цвет/маркер", "color"],
     ["height", "Рост", "text"], ["weight", "Вес", "text"], ["age", "Возраст", "text"],
@@ -20,9 +24,13 @@ const schemas = {
   archive: [["title", "Материал", "text"], ["kind", "Тип", "text"], ["notes", "Описание или ссылка", "textarea"]]
 };
 
-const emptyProject = () => ({ title: "Новая история", characters: [], events: [], clues: [], notes: [], family: [], mind: [], tracker: [], archive: [] });
+const emptyProject = () => ({ title: "Новая история", startedAt: "", currentAt: "", notes: "", cover: "", characters: [], events: [], clues: [], notesBoard: [], family: [], mind: [], tracker: [], archive: [] });
 const seed = {
   title: "Дом на черной воде",
+  startedAt: "2026-08-13",
+  currentAt: "Черновик",
+  notes: "Готический детектив о памяти, наследстве и доме, который хранит чужие версии правды.",
+  cover: "",
   characters: [
     item("characters", { name: "Мира Вейл", role: "наследница", color: "#8e3036", height: "172 см", weight: "62 кг", age: "27", motive: "Вернуть дом семьи", secret: "Помнит ночь пожара иначе, чем все остальные", appearance: "Темные волосы, узкие перчатки, шрам у виска.", voice: "Говорит коротко, когда боится.", arc: "От бегства от прошлого к праву назвать правду.", x: 8, y: 12 }),
     item("characters", { name: "Элиас Корн", role: "архивариус", color: "#31586a", age: "54", motive: "Спрятать старые письма", secret: "Знал мать Миры", x: 36, y: 42 }),
@@ -34,7 +42,7 @@ const seed = {
     item("events", { date: "Глава 8", title: "Свидетель у воды", notes: "Элиас впервые лжет вслух", x: 70, y: 70 })
   ],
   clues: [item("clues", { title: "Ключ с солью на бородке", notes: "Нашли у старого причала", x: 76, y: 42 })],
-  notes: [item("notes", { title: "Правило канона", notes: "Все факты помечать как канон, версия или вопрос.", x: 48, y: 16 })],
+  notesBoard: [item("notesBoard", { title: "Правило канона", notes: "Все факты помечать как канон, версия или вопрос.", x: 48, y: 16 })],
   family: [
     item("family", { title: "Ада Вейл", relation: "мать Миры", x: 24, y: 18 }),
     item("family", { title: "Мира Вейл", relation: "дочь", x: 24, y: 50 }),
@@ -68,6 +76,10 @@ function load() {
 function normalize(data) {
   const base = emptyProject();
   Object.assign(base, data);
+  if (data.notesBoard === undefined && Array.isArray(data.notes)) {
+    base.notesBoard = data.notes;
+    base.notes = typeof data.projectNotes === "string" ? data.projectNotes : "";
+  }
   Object.keys(base).forEach((key) => {
     if (Array.isArray(base[key])) base[key] = base[key].map((entry) => ({ ...item(key), ...entry, type: key }));
   });
@@ -81,6 +93,9 @@ function save() {
 
 function render() {
   $("#projectTitle").textContent = state.title;
+  $("#projectCover").src = state.cover || "assets/writer-planning-kit.png";
+  $("#projectMeta").textContent = [state.startedAt && `Дата начала: ${state.startedAt}`, state.currentAt && `Сейчас: ${state.currentAt}`].filter(Boolean).join(" | ") || "Проект можно снабдить обложкой, датой начала, текущим этапом и заметками.";
+  $("#projectNotes").textContent = state.notes || "";
   $("#itemCount").textContent = `${collections().reduce((sum, key) => sum + state[key].length, 0)} объектов`;
   renderBoard();
   renderCharacters();
@@ -92,11 +107,11 @@ function render() {
 }
 
 function collections() {
-  return ["characters", "events", "clues", "notes", "family", "mind", "tracker", "archive"];
+  return ["characters", "events", "clues", "notesBoard", "family", "mind", "tracker", "archive"];
 }
 
 function boardItems() {
-  return [...state.characters, ...state.events, ...state.clues, ...state.notes];
+  return [...state.characters, ...state.events, ...state.clues, ...state.notesBoard];
 }
 
 function renderBoard() {
@@ -267,6 +282,14 @@ function openEditor(type, id) {
   $("#editorDialog").showModal();
 }
 
+function openProjectEditor() {
+  editing = { type: "project", id: "project" };
+  $("#editorTitle").textContent = "Редактор проекта";
+  $("#editorFields").innerHTML = schemas.project.map(([key, label, fieldType]) => field(state, key, label, fieldType)).join("");
+  $("#deleteCurrent").style.display = "none";
+  $("#editorDialog").showModal();
+}
+
 function field(entry, key, label, fieldType) {
   if (fieldType === "textarea") return `<label>${label}<textarea name="${key}">${escapeHtml(entry[key] || "")}</textarea></label>`;
   if (fieldType === "file") return `<label>${label}<input name="${key}" type="file" accept="image/*">${entry[key] ? `<img class="editor-preview" src="${entry[key]}" alt="">` : ""}</label>`;
@@ -276,7 +299,7 @@ function field(entry, key, label, fieldType) {
 
 async function saveEditor(event) {
   event.preventDefault();
-  const entry = findEntry(editing.type, editing.id);
+  const entry = editing.type === "project" ? state : findEntry(editing.type, editing.id);
   const data = new FormData(event.target);
   for (const [key, value] of data.entries()) {
     if (value instanceof File) {
@@ -286,6 +309,7 @@ async function saveEditor(event) {
     }
   }
   $("#editorDialog").close();
+  $("#deleteCurrent").style.display = "";
   save();
   render();
 }
@@ -307,7 +331,7 @@ function addQuick(type) {
     character: () => state.characters.push(item("characters", { name: "Новый персонаж", role: "роль", color: "#a6782c" })),
     event: () => state.events.push(item("events", { date: "Глава ?", title: "Новое событие" })),
     clue: () => state.clues.push(item("clues", { title: "Новая улика", notes: "Что она доказывает" })),
-    note: () => state.notes.push(item("notes", { title: "Новая заметка", notes: "" })),
+    note: () => state.notesBoard.push(item("notesBoard", { title: "Новая заметка", notes: "" })),
     relative: () => state.family.push(item("family", { title: "Новый родственник", relation: "связь" })),
     archive: () => state.archive.push(item("archive", { title: "Новый материал", kind: "референс" }))
   };
@@ -352,13 +376,22 @@ bindForm("#eventForm", (data) => state.events.push(item("events", data)));
 bindForm("#mindForm", (data) => state.mind.push(item("mind", data)));
 bindForm("#trackerForm", (data) => state.tracker.push(item("tracker", data)));
 $("#editorForm").addEventListener("submit", saveEditor);
-$("#closeEditor").addEventListener("click", () => $("#editorDialog").close());
+$("#closeEditor").addEventListener("click", () => {
+  $("#deleteCurrent").style.display = "";
+  $("#editorDialog").close();
+});
 $("#deleteCurrent").addEventListener("click", () => {
+  if (editing.type === "project") {
+    $("#editorDialog").close();
+    return;
+  }
   state[editing.type] = state[editing.type].filter((entry) => entry.id !== editing.id);
   $("#editorDialog").close();
   save();
   render();
 });
+$("#editProjectBtn").addEventListener("click", () => openProjectEditor());
+$("#archiveEditProjectBtn").addEventListener("click", () => openProjectEditor());
 $("#seedBtn").addEventListener("click", () => { state = clone(seed); save(); render(); });
 $("#clearBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });
 $("#newProjectBtn").addEventListener("click", () => { state = emptyProject(); save(); render(); });

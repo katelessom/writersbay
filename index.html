@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writers Bay</title>
-    <link rel="stylesheet" href="styles.css?v=5" />
+    <link rel="stylesheet" href="styles.css?v=6" />
   </head>
   <body>
     <div class="app">
@@ -51,6 +51,7 @@
               <h2 id="projectTitle" contenteditable="true" spellcheck="false">Дом на черной воде</h2>
             </div>
             <div class="status-bar">
+              <button id="editProjectBtn" class="small-action">Редактировать проект</button>
               <span id="saveState">сохранено</span>
               <span id="itemCount">0 объектов</span>
             </div>
@@ -137,11 +138,13 @@
 
           <section id="archive" class="view">
             <div class="archive">
-              <img src="assets/writer-planning-kit.png" alt="Материалы для планирования истории" />
+              <img id="projectCover" src="assets/writer-planning-kit.png" alt="Обложка проекта" />
               <div>
                 <h3>Архив проекта</h3>
-                <p>Бэкап сохраняет название проекта, персонажей, события, улики, тайны, майнд-карту и заметки. Данные остаются в браузере и в скачанном JSON-файле.</p>
+                <p id="projectMeta">Бэкап сохраняет название проекта, персонажей, события, улики, тайны, майнд-карту и заметки. Данные остаются в браузере и в скачанном JSON-файле.</p>
+                <p id="projectNotes" class="project-notes"></p>
                 <div class="toolbar">
+                  <button id="archiveEditProjectBtn">Редактировать проект</button>
                   <button id="seedBtn">Заполнить примером</button>
                   <button id="clearBtn" class="danger">Очистить проект</button>
                 </div>
@@ -165,6 +168,6 @@
         </footer>
       </form>
     </dialog>
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
   </body>
 </html>
