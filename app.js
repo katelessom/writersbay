@@ -653,7 +653,8 @@ function handleLink(id, type = "board") {
     links.push({ id: createId(), from: pendingLink, to: id });
   }
   pendingLink = null;
-  pendingLinkType = linkMode ? linkType : null;
+  pendingLinkType = null;
+  linkMode = false;
   save();
   render();
 }
@@ -697,6 +698,7 @@ function chooseMindLinkTarget(id) {
     state.mindLinks.push({ id: createId(), from: pendingMindLink, to: id });
   }
   pendingMindLink = null;
+  mindLinkMode = false;
   save();
   render();
 }
