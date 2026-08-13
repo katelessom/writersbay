@@ -477,7 +477,7 @@ h2 {
 
 .split {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) 1fr;
+  grid-template-columns: minmax(240px, 320px) 1fr;
   gap: 18px;
 }
 
@@ -485,12 +485,23 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 18px;
+  padding: 14px;
 }
 
 form {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+}
+
+#characterForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+#characterForm h3,
+#characterForm textarea,
+#characterForm button {
+  grid-column: 1 / -1;
 }
 
 input, textarea, select {
@@ -499,14 +510,18 @@ input, textarea, select {
   border-radius: 6px;
   background: white;
   color: var(--ink);
-  padding: 10px 12px;
+  padding: 8px 10px;
   -webkit-user-select: text;
   user-select: text;
 }
 
 textarea {
-  min-height: 96px;
+  min-height: 72px;
   resize: vertical;
+}
+
+#characterForm textarea {
+  min-height: 58px;
 }
 
 .cards {
